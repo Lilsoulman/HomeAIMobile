@@ -1,0 +1,75 @@
+/* 精简自 TabFlow css/newtab.css:5-127，保留 3 套主题 */
+
+:root,
+[data-theme='violet'] {
+  --w-015: rgba(255, 255, 255, 0.015);
+  --w-025: rgba(255, 255, 255, 0.025);
+  --w-035: rgba(255, 255, 255, 0.035);
+  --w-3: rgba(255, 255, 255, 0.3);
+  --w-55: rgba(255, 255, 255, 0.55);
+  --w-07: rgba(255, 255, 255, 0.07);
+
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-card: var(--w-035);
+  --bg-card-hover: rgba(99, 102, 241, 0.12);
+  --border: var(--w-07);
+
+  --text-primary: #e0e7ff;
+  --text-secondary: var(--w-55);
+  --text-muted: var(--w-3);
+
+  --accent: #6366f1;
+  --accent-light: #818cf8;
+  --accent-dark: #4f46e5;
+  --accent-glow: rgba(99, 102, 241, 0.18);
+  --accent-bg: rgba(99, 102, 241, 0.1);
+
+  --priority-high: #ef4444;
+  --priority-mid: #f59e0b;
+  --priority-low: #10b981;
+}
+
+[data-theme='ocean'] {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-card: var(--w-035);
+  --bg-card-hover: rgba(56, 189, 248, 0.12);
+  --border: var(--w-07);
+
+  --text-primary: #f8fafc;
+  --text-secondary: var(--w-55);
+  --text-muted: var(--w-3);
+
+  --accent: #38bdf8;
+  --accent-light: #7dd3fc;
+  --accent-dark: #0ea5e9;
+  --accent-glow: rgba(56, 189, 248, 0.18);
+  --accent-bg: rgba(56, 189, 248, 0.1);
+
+  --priority-high: #f87171;
+  --priority-mid: #fbbf24;
+  --priority-low: #34d399;
+}
+
+[data-theme='light'] {
+  --bg-primary: #f3e8ff;
+  --bg-secondary: #fefefe;
+  --bg-card: rgba(168, 85, 247, 0.06);
+  --bg-card-hover: rgba(168, 85, 247, 0.12);
+  --border: rgba(168, 85, 247, 0.12);
+
+  --text-primary: #2e1065;
+  --text-secondary: rgba(0, 0, 0, 0.62);
+  --text-muted: rgba(0, 0, 0, 0.46);
+
+  --accent: #a855f7;
+  --accent-light: #c084fc;
+  --accent-dark: #7e22ce;
+  --accent-glow: rgba(168, 85, 247, 0.12);
+  --accent-bg: rgba(168, 85, 247, 0.08);
+
+  --priority-high: #dc2626;
+  --priority-mid: #d97706;
+  --priority-low: #059669;
+}
