@@ -19,7 +19,26 @@ export function mockAdapter (config) {
     if (m && r.methods.includes(method)) {
       const id = m[1] || null
       const body = typeof config.data === 'string' ? safeParse(config.data) : config.data
-      return Promise.resolve({ status: 200, data: r.handler({ method, id, body, query: config.params }) })
+      const ctx = { method, id, body, query: config.params }
+      
+      // handler 是对象时，根据 method 调用对应方法
+      if (typeof r.handler === 'object') {
+        switch (method) {
+          case 'GET':
+            return Promise.resolve({ status: 200, data: id ? r.handler.get(id) : r.handler.list(ctx) })
+          case 'POST':
+            return Promise.resolve({ status: 200, data: r.handler.create(body) })
+          case 'PUT':
+            return Promise.resolve({ status: 200, data: r.handler.update(id, body) })
+          case 'DELETE':
+            return Promise.resolve({ status: 200, data: r.handler.remove(id) })
+          default:
+            return Promise.reject(new Error('Mock unsupported method: ' + method))
+        }
+      }
+      
+      // handler 是函数时（兼容旧写法）
+      return Promise.resolve({ status: 200, data: r.handler(ctx) })
     }
   }
   return Promise.reject(new Error('Mock 404: ' + path))

@@ -1,4 +1,4 @@
-# HomeAIMobile — 后续开发计划
+# HomeMindMobile — 后续开发计划
 
 > 首版（M0）只完成首页 Dashboard。本文为 M1~M5 的开发路线图，
 > 每完成一个里程碑，把对应章节挪到 CHANGELOG，新增"完成情况"小节。
@@ -260,16 +260,16 @@
 
 | 表 | 实体类 | 命名空间 |
 |---|---|---|
-| `users` | `User` | `HomeAI.Api.Entities` |
-| `todos` | `Todo` + `Subtask` (Owned) | `HomeAI.Api.Entities` |
-| `attachments` | `Attachment` | `HomeAI.Api.Entities` |
-| `calendar_events` | `CalendarEvent` | `HomeAI.Api.Entities` |
-| `calendar_subscriptions` | `CalendarSubscription` | `HomeAI.Api.Entities` |
-| `ai_skills` | `AiSkill` | `HomeAI.Api.Entities` |
-| `user_settings` | `UserSetting`（复合主键） | `HomeAI.Api.Entities` |
-| `ai_configs` | `AiConfig` | `HomeAI.Api.Entities` |
+| `users` | `User` | `HomeMind.Api.Entities` |
+| `todos` | `Todo` + `Subtask` (Owned) | `HomeMind.Api.Entities` |
+| `attachments` | `Attachment` | `HomeMind.Api.Entities` |
+| `calendar_events` | `CalendarEvent` | `HomeMind.Api.Entities` |
+| `calendar_subscriptions` | `CalendarSubscription` | `HomeMind.Api.Entities` |
+| `ai_skills` | `AiSkill` | `HomeMind.Api.Entities` |
+| `user_settings` | `UserSetting`（复合主键） | `HomeMind.Api.Entities` |
+| `ai_configs` | `AiConfig` | `HomeMind.Api.Entities` |
 
-`HomeAIDbContext : DbContext`，注册 `IEntityTypeConfiguration<T>`，每实体一个 `IEntityTypeConfiguration` 类。
+`HomeMindDbContext : DbContext`，注册 `IEntityTypeConfiguration<T>`，每实体一个 `IEntityTypeConfiguration` 类。
 
 ### 4.4 JWT 设计
 

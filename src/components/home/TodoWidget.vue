@@ -24,14 +24,16 @@
         v-for="(t, i) in homeList"
         :key="t.id"
         class="wd-item"
-        :class="{ done: t.done, [t.priority]: true }"
+        :class="{ done: t.done }"
         :style="{ borderLeftColor: t.color || 'var(--priority-' + t.priority + ')' }"
+        @click="goTodo(t)"
       >
         <label class="wd-check" @click.stop>
           <input type="checkbox" :checked="t.done" @change="toggle(t.id)" />
           <span class="wd-check-mark" />
         </label>
         <div class="wd-body">
+          <span v-if="t.pinned" class="wd-pin">📌</span>
           <span class="wd-seq">#{{ t.seq || '?' }}</span>
           <span class="wd-text">{{ t.title }}</span>
         </div>
@@ -48,6 +50,7 @@
 <script>
 import { mapGetters, mapActions } from 'vuex'
 import EmptyState from '@/components/common/EmptyState.vue'
+import { track } from '@/utils/track'
 
 const PRIORITY_LABEL = { high: '高', mid: '中', low: '低' }
 
@@ -64,7 +67,12 @@ export default {
       const title = this.newTitle.trim()
       if (!title) return
       await this.add({ title, priority: 'low', type: 'other' })
+      track('todo_quick_add', { source: 'home_widget' })
       this.newTitle = ''
+    },
+    goTodo () {
+      track('home_todo_click')
+      this.$router.push('/todo')
     },
     formatDue (ts) {
       const d = new Date(ts)
@@ -136,6 +144,7 @@ export default {
 }
 
 .wd-body { flex: 1; display: flex; align-items: center; gap: 6px; min-width: 0; }
+.wd-pin { font-size: 10px; flex-shrink: 0; }
 .wd-seq { color: var(--text-muted); font-size: 10px; flex-shrink: 0; }
 .wd-text {
   font-size: 13px; color: var(--text-primary);

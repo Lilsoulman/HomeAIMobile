@@ -8,9 +8,13 @@ import App from './App.vue'
 import router from './router'
 import store from './store'
 import ThemeProvider from './components/common/ThemeProvider.vue'
+import { migrateLocalStorage } from './utils/migrate'
 import './assets/styles/index.css'
 import './assets/styles/themes.css'
 import './assets/styles/animations.css'
+
+// 品牌迁移必须在 store hydration 之前完成
+migrateLocalStorage()
 
 Vue.use(ElementUI, { size: 'small' })
 Vue.use(Vant)

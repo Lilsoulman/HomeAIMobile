@@ -2,7 +2,7 @@
   <section class="cal-widget card fade-in">
     <header class="cw-head">
       <span class="cw-title">{{ year }}年{{ month + 1 }}月</span>
-      <button class="cw-viewall" @click="$router.push('/calendar')">查看全部 →</button>
+      <button class="cw-viewall" @click="goCal">查看全部 →</button>
     </header>
     <div class="cw-body">
       <div class="cw-left">
@@ -66,6 +66,7 @@
 <script>
 import { mapState, mapGetters } from 'vuex'
 import { getMonthGrid, isSameDay, dateKey } from '@/utils/date'
+import { track } from '@/utils/track'
 
 export default {
   name: 'CalendarWidget',
@@ -111,6 +112,10 @@ export default {
       this.popup.date = key
       this.popup.events = this.dayChips(cell.date)
       this.popup.show = true
+    },
+    goCal () {
+      track('home_calendar_click')
+      this.$router.push('/calendar')
     }
   }
 }

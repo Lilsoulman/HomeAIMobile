@@ -1,11 +1,11 @@
 <template>
   <section class="quick-entries fade-in">
     <button
-      v-for="(it, i) in items"
-      :key="i"
+      v-for="it in items"
+      :key="it.key"
       class="qe"
       :style="{ '--qe-color': it.color }"
-      @click="onClick(it)"
+      @click="go(it)"
     >
       <span class="qe-icon">{{ it.icon }}</span>
       <span class="qe-label">{{ it.label }}</span>
@@ -14,24 +14,24 @@
 </template>
 
 <script>
-import { Toast } from 'vant'
+import { track } from '@/utils/track'
 
 export default {
   name: 'QuickEntries',
   data () {
     return {
       items: [
-        { key: 'add', icon: '➕', label: '新建', color: 'var(--accent)' },
-        { key: 'search', icon: '🔍', label: '搜索', color: '#38bdf8' },
-        { key: 'skill', icon: '🧠', label: '技能', color: '#a855f7' },
-        { key: 'ai', icon: '🤖', label: 'AI', color: '#10b981' }
+        { key: 'todo', icon: '✅', label: '待办', color: 'var(--accent)', to: '/todo' },
+        { key: 'calendar', icon: '📅', label: '日历', color: '#38bdf8', to: '/calendar' },
+        { key: 'ai', icon: '🤖', label: 'AI 报告', color: '#a855f7', to: '/me' },
+        { key: 'me', icon: '👤', label: '我的', color: '#10b981', to: '/me' }
       ]
     }
   },
   methods: {
-    onClick (it) {
-      if (it.key === 'add') this.$router.push('/todo')
-      else Toast(`「${it.label}」将在 M1~M3 阶段开放（见 PROJECT_PLAN.md §3）`)
+    go (it) {
+      track('quick_entry_click', { key: it.key })
+      this.$router.push(it.to)
     }
   }
 }

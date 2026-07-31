@@ -1,8 +1,8 @@
 {
-  "name": "home-ai-mobile",
+  "name": "home-mind-mobile",
   "version": "0.1.0",
   "private": true,
-  "description": "移动端 H5 应用，复刻 TabFlow 思路：首页 Dashboard + 待办 + 日历 + AI 周报",
+  "description": "移动端 H5 应用 HomeMind：复刻 TabFlow 思路：首页 Dashboard + 待办 + 日历 + AI 周报",
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",

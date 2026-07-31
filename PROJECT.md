@@ -1,4 +1,4 @@
-# HomeAIMobile
+# HomeMindMobile
 
 > 移动端 H5 应用。设计思路复刻自 `D:\核心\插件\TabFlow`（Chrome 扩展），
 > 去除浏览器特有能力（标签管理、代理、证书绕过等），保留并移植：
