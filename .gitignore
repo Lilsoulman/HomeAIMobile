@@ -1,5 +1,12 @@
 node_modules
 dist
+build
+.dart_tool
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+.idea
+.metadata
 .DS_Store
 *.log
 .vscode
