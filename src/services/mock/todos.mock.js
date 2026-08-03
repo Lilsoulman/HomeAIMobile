@@ -1,4 +1,7 @@
-// 待办 mock，schema 照搬 TabFlow todo.js:179-187 makeTodo
+// Todos 模块 mock：list / get / create / update / remove + subtasks
+// 与旧 services/mock/todos.js 字段一致，避免改 store
+import { ok, fail } from './response'
+
 const now = Date.now()
 const oneDay = 86400000
 let store = [
@@ -13,32 +16,83 @@ let store = [
 ]
 let seq = store.length + 1
 
-export const mockTodos = {
-  list () { return { code: 0, data: store } },
-  get (id) { return { code: 0, data: store.find(t => t.id === id) } },
-  create (body) {
-    const id = 't' + Date.now()
+export function registerTodos (mock) {
+  // 列表：支持 ?status=&type= 简单过滤
+  mock.onGet('/todos').reply(config => {
+    const params = config.params || {}
+    let list = store.slice()
+    if (params.status === 'pending') list = list.filter(t => !t.done)
+    if (params.status === 'completed') list = list.filter(t => t.done)
+    if (params.type && params.type !== 'all') list = list.filter(t => t.type === params.type)
+    return [200, ok(list)]
+  })
+
+  // 详情
+  mock.onGet(/\/todos\/[A-Za-z0-9_-]+$/).reply(config => {
+    const id = config.url.split('/').pop()
+    const t = store.find(x => x.id === id)
+    if (!t) return [404, fail(404, 'not found')]
+    return [200, ok(t)]
+  })
+
+  // 新建
+  mock.onPost('/todos').reply(config => {
+    const body = typeof config.data === 'string' ? JSON.parse(config.data || '{}') : (config.data || {})
     const todo = {
-      id, seq: seq++, title: body.title || '新待办', type: body.type || 'other',
-      priority: body.priority || 'low', color: body.color || '',
-      done: false, dueDate: body.dueDate || null, remindAt: null, repeat: 'none',
-      parentId: null, tags: [], subtasks: [], pinned: false,
-      createdAt: Date.now(), updatedAt: Date.now(), completedAt: null
+      id: 't' + Date.now(),
+      seq: seq++,
+      title: body.title || '新待办',
+      type: body.type || 'other',
+      priority: body.priority || 'low',
+      color: body.color || '',
+      done: false,
+      dueDate: body.dueDate || null,
+      remindAt: null,
+      repeat: 'none',
+      parentId: null,
+      tags: [],
+      subtasks: [],
+      pinned: false,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      completedAt: null
     }
     store.push(todo)
-    return { code: 0, data: todo }
-  },
-  update (id, body) {
+    return [200, ok(todo)]
+  })
+
+  // 更新
+  mock.onPut(/\/todos\/[A-Za-z0-9_-]+$/).reply(config => {
+    const id = config.url.split('/').pop()
     const i = store.findIndex(t => t.id === id)
-    if (i < 0) return { code: 404, msg: 'not found' }
+    if (i < 0) return [404, fail(404, 'not found')]
+    const body = typeof config.data === 'string' ? JSON.parse(config.data || '{}') : (config.data || {})
     store[i] = { ...store[i], ...body, updatedAt: Date.now() }
     if (body.done !== undefined) {
       store[i].completedAt = body.done ? Date.now() : null
     }
-    return { code: 0, data: store[i] }
-  },
-  remove (id) {
+    return [200, ok(store[i])]
+  })
+
+  // 删除
+  mock.onDelete(/\/todos\/[A-Za-z0-9_-]+$/).reply(config => {
+    const id = config.url.split('/').pop()
+    const before = store.length
     store = store.filter(t => t.id !== id)
-    return { code: 0, data: { id } }
-  }
+    if (store.length === before) return [404, fail(404, 'not found')]
+    return [200, ok({ id })]
+  })
+
+  // 子任务：增
+  mock.onPost(/\/todos\/[A-Za-z0-9_-]+\/subtasks$/).reply(config => {
+    const id = config.url.split('/')[2]
+    const t = store.find(x => x.id === id)
+    if (!t) return [404, fail(404, 'todo not found')]
+    const body = typeof config.data === 'string' ? JSON.parse(config.data || '{}') : (config.data || {})
+    const sub = { id: 's' + Date.now(), text: body.text || '子任务', done: false }
+    t.subtasks = Array.isArray(t.subtasks) ? t.subtasks : []
+    t.subtasks.push(sub)
+    t.updatedAt = Date.now()
+    return [200, ok(sub)]
+  })
 }

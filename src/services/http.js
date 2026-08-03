@@ -1,9 +1,12 @@
-// axios 实例 + JWT 拦截器。首版用 mock，留好真实后端的接缝
+// axios 实例 + JWT 拦截器 + 统一响应解包
+// 用法：main.js 中 import { setupHttp } 并调一次，启用 mock 拦截
 import axios from 'axios'
 import { storage } from '@/utils/storage'
+import { API_BASE, USE_MOCK } from '@/utils/env'
+import { setupMock } from '@/services/mock'
 
 const http = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE,
   timeout: 10000
 })
 
@@ -27,5 +30,15 @@ http.interceptors.response.use(
   },
   err => Promise.reject(err)
 )
+
+let inited = false
+export function setupHttp () {
+  if (inited) return http
+  inited = true
+  if (USE_MOCK) {
+    setupMock(http)
+  }
+  return http
+}
 
 export default http

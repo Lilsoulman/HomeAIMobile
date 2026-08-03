@@ -9,12 +9,16 @@ import router from './router'
 import store from './store'
 import ThemeProvider from './components/common/ThemeProvider.vue'
 import { migrateLocalStorage } from './utils/migrate'
+import { setupHttp } from './services/http'
 import './assets/styles/index.css'
 import './assets/styles/themes.css'
 import './assets/styles/animations.css'
 
 // 品牌迁移必须在 store hydration 之前完成
 migrateLocalStorage()
+
+// 初始化 axios：注册 mock 拦截（按 VUE_APP_USE_MOCK 决定）
+setupHttp()
 
 Vue.use(ElementUI, { size: 'small' })
 Vue.use(Vant)

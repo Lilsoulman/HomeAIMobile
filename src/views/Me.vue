@@ -1,48 +1,86 @@
 <template>
   <div class="me-view">
-    <div class="user-card card">
-      <div class="avatar">{{ avatarText }}</div>
-      <div class="info">
-        <div class="name">{{ userInfo.name }}</div>
-        <div class="sub">未登录 · 首版仅展示</div>
-      </div>
-    </div>
-
-    <div class="settings card">
-      <div class="set-head">外观</div>
-      <div class="theme-row">
-        <button
-          v-for="t in themes"
-          :key="t.key"
-          class="theme-btn"
-          :class="{ active: theme === t.key }"
-          :style="{ '--swatch': t.color }"
-          @click="setTheme(t.key)"
-        >{{ t.label }}</button>
+    <!-- 已登录：显示用户卡片 + 退出按钮 -->
+    <template v-if="isLoggedIn">
+      <div class="user-card card">
+        <div class="avatar">{{ avatarText }}</div>
+        <div class="info">
+          <div class="name">{{ userInfo.name || userInfo.displayName || '用户' }}</div>
+          <div class="sub">{{ userInfo.phone ? (userInfo.phone.slice(0, 3) + '****' + userInfo.phone.slice(-4)) : (userInfo.wechatOpenId ? '微信用户' : '已登录') }}</div>
+        </div>
       </div>
 
-      <div class="set-head">语言</div>
-      <div class="theme-row">
-        <button
-          v-for="l in langs"
-          :key="l.key"
-          class="theme-btn"
-          :class="{ active: lang === l.key }"
-          @click="setLang(l.key)"
-        >{{ l.label }}</button>
-      </div>
-    </div>
+      <div class="settings card">
+        <div class="set-head">外观</div>
+        <div class="theme-row">
+          <button
+            v-for="t in themes"
+            :key="t.key"
+            class="theme-btn"
+            :class="{ active: theme === t.key }"
+            :style="{ '--swatch': t.color }"
+            @click="setTheme(t.key)"
+          >{{ t.label }}</button>
+        </div>
 
-    <Placeholder icon="👤" title="账号" sub="完整版：JWT 登录/注册、设置云同步" />
+        <div class="set-head">语言</div>
+        <div class="theme-row">
+          <button
+            v-for="l in langs"
+            :key="l.key"
+            class="theme-btn"
+            :class="{ active: lang === l.key }"
+            @click="setLang(l.key)"
+          >{{ l.label }}</button>
+        </div>
+      </div>
+
+      <div class="actions card">
+        <el-button type="danger" plain style="width: 100%" @click="onLogout">退出登录</el-button>
+      </div>
+    </template>
+
+    <!-- 未登录：显示大按钮 -->
+    <template v-else>
+      <div class="welcome card">
+        <div class="big-avatar">👤</div>
+        <div class="welcome-title">未登录</div>
+        <div class="welcome-sub">登录后体验更多功能</div>
+        <el-button type="primary" size="medium" style="width: 100%; margin-top: 16px" @click="goLogin">立即登录</el-button>
+      </div>
+
+      <div class="settings card">
+        <div class="set-head">外观</div>
+        <div class="theme-row">
+          <button
+            v-for="t in themes"
+            :key="t.key"
+            class="theme-btn"
+            :class="{ active: theme === t.key }"
+            :style="{ '--swatch': t.color }"
+            @click="setTheme(t.key)"
+          >{{ t.label }}</button>
+        </div>
+
+        <div class="set-head">语言</div>
+        <div class="theme-row">
+          <button
+            v-for="l in langs"
+            :key="l.key"
+            class="theme-btn"
+            :class="{ active: lang === l.key }"
+            @click="setLang(l.key)"
+          >{{ l.label }}</button>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
 <script>
-import { mapState } from 'vuex'
-import Placeholder from './Placeholder.vue'
+import { mapState, mapGetters } from 'vuex'
 
 export default {
-  components: { Placeholder },
   data () {
     return {
       themes: [
@@ -58,11 +96,26 @@ export default {
   },
   computed: {
     ...mapState({ theme: s => s.settings.theme, lang: s => s.settings.lang, userInfo: s => s.user.userInfo }),
-    avatarText () { return (this.userInfo.name || '用').slice(0, 1) }
+    ...mapGetters('user', ['isLoggedIn']),
+    avatarText () {
+      const n = this.userInfo.name || this.userInfo.displayName || '用'
+      return n.slice(0, 1)
+    }
   },
   methods: {
     setTheme (t) { this.$store.commit('settings/SET_THEME', t) },
-    setLang (l) { this.$store.commit('settings/SET_LANG', l) }
+    setLang (l) { this.$store.commit('settings/SET_LANG', l) },
+    goLogin () {
+      this.$router.push({ path: '/login', query: { from: this.$route.fullPath } })
+    },
+    async onLogout () {
+      try {
+        await this.$confirm('确认退出登录？', '提示', { type: 'warning' })
+      } catch (e) { return }
+      await this.$store.dispatch('user/logout')
+      // 同步清空整个 user state（persistence 走全局订阅）
+      this.$message.success('已退出登录')
+    }
   }
 }
 </script>
@@ -78,6 +131,11 @@ export default {
 }
 .info .name { font-size: 16px; font-weight: 600; }
 .info .sub { font-size: 11px; color: var(--text-muted); }
+
+.welcome { padding: 32px 20px; text-align: center; }
+.big-avatar { font-size: 48px; margin-bottom: 8px; }
+.welcome-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.welcome-sub { font-size: 12px; color: var(--text-muted); }
 
 .settings { padding: 12px 16px; }
 .set-head { font-size: 12px; color: var(--text-muted); margin: 8px 0 6px; }
@@ -97,4 +155,6 @@ export default {
   background: var(--swatch, var(--accent));
   border-color: var(--swatch, var(--accent));
 }
+
+.actions { padding: 12px 16px; }
 </style>

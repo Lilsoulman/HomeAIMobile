@@ -6,6 +6,7 @@ Vue.use(VueRouter)
 
 const routes = [
   { path: '/', name: 'home', component: () => import('@/views/Home.vue'), meta: { title: '首页' } },
+  { path: '/login', name: 'login', component: () => import('@/views/Login.vue'), meta: { title: '登录' } },
   { path: '/todo', name: 'todo', component: () => import('@/views/Todo.vue'), meta: { title: '待办' } },
   { path: '/calendar', name: 'calendar', component: () => import('@/views/Calendar.vue'), meta: { title: '日历' } },
   { path: '/me', name: 'me', component: () => import('@/views/Me.vue'), meta: { title: '我的' } },

@@ -16,6 +16,9 @@
 | M3 | AI 周报/日报 | 1.4 周 | Skill 池 UI/OpenAI 兼容 API（前端直调,M5 前）/ 5 个内置 Skill | ⬜ 待启动 |
 | M4 | 账号 + 同步 | 1.4 周 | JWT 登录/多端 LWW 同步/PWA/Web Push | ⬜ 待启动 |
 | M5 | C# 后端 + 上线 | 2 周 | ASP.NET Core 8/EF Core/SQL Server/AI/iCal/天气代理 | ⬜ 待启动 |
+| **M6.1** | **专家工作台 · 契约 + UI + Mock** | **1.2 周** | Expert/Group 领域模型；列表/详情/创建/执行/结果 5 个页面；状态机；mock 数据 | ⬜ 待启动 |
+| **M6.2** | **专家工作台 · 真 AI 接入 + 配置页 + 打通** | **1 周** | AI 配置页（endpoint/model/temperature）；真调 `/ai/generate`；单 Expert + 串行 Group；结果→待办/日历 | ⬜ 待启动 |
+| **M6.3** | **专家工作台 · DAG 并行 + SSE + 信用账本（预留）** | **1.4 周** | DAG 调度器；SSE 实时事件；estimate/charge/refund 账本 | ⬜ 待启动 |
 
 ---
 
@@ -101,6 +104,7 @@
 - M3.6 日报页：同上，scope=day
 - M3.7 排除规则：重复 todo 不计 / 单条 reportIgnored 标记（M1.13 复用）
 - M3.8 迁移逻辑：检测 `weekReportSkills/dayReportSkills` 旧键 → 合并到新池
+- M3.9 **（M6 接管）** M3 范围被 M6 复用为内置 Skill 中的 `daily-report` 与 `weekly-report`；M3 切片整体并入 M6.2
 
 ### M4（7 天）
 
@@ -126,6 +130,43 @@
 - M5.9 附件本地存储：落 `wwwroot/uploads/{userId}/{guid}.{ext}`，10MB 限
 - M5.10 Docker：多阶段构建 + healthcheck + docker-compose（SQL Server + API）
 - M5.11 部署文档：IIS 反代步骤 + systemd unit 样例
+
+### M6.1 — 专家工作台 · 数据契约 + UI + Mock（12 天）
+
+- M6.1.1 `docs/EXPERT_DOMAIN.md` 领域模型详细设计（Expert / Version / Group / GroupVersion / Member / Run / RunStep / RunEvent / RunArtifact / CreditLedger / UserExpertPreference）
+- M6.1.2 store 新增 `experts` 模块：catalog / runs / events 子 state
+- M6.1.3 注入内置 6 个 Expert（Goal decomposition coach / Daily & weekly planner / Review analyst / Todo organizer / Habit coach / Information organizer）+ 3 个 Expert Group（Weekly planning / Goal decomposition / Personal review）
+- M6.1.4 `services/api/experts.js`：list / detail / createRun / getRun / cancel / retry / actions
+- M6.1.5 `services/api/expertRuns.js`：runs CRUD + events 查询
+- M6.1.6 `services/mock/experts.mock.js`：内置目录 + 假 run（轮询返回 6 步状态）
+- M6.1.7 `services/mock/expertRuns.mock.js`：run 状态机 mock
+- M6.1.8 路由新增 `/experts`（Tab）→ 三个子路由：catalog / runs / detail
+- M6.1.9 `views/Experts.vue`（catalog 列表 + 搜索 + 分类筛选 + 收藏）
+- M6.1.10 `views/ExpertDetail.vue`（详情 + 启动）
+- M6.1.11 `views/ExpertRun.vue`（实时执行进度 + 取消 + 重试；轮询 2s）
+- M6.1.12 `views/ExpertResult.vue`（结果 + 创建待办 + 创建日历）
+
+### M6.2 — 专家工作台 · 真 AI 接入 + 配置页 + 打通（10 天）
+
+- M6.2.1 `services/api/aiConfig.js`：get / update（CRUD 后端 `ai_configs`）
+- M6.2.2 `services/api/ai.js`：调用 `/ai/generate` 真后端（走 AI 网关，Key 加密存后端）
+- M6.2.3 `services/mock/ai.mock.js`：默认仍 mock（未配 Key 时降级 mock）
+- M6.2.4 `views/Settings.vue`（Me 页入口 → AI 配置 / 主题 / 语言 / 退出登录）
+- M6.2.5 `components/settings/AiConfigForm.vue`：endpoint / model / temperature / "测试连接"按钮
+- M6.2.6 store 新增 `aiConfig` 模块
+- M6.2.7 `services/api/expertRuns.js` 真接入：单 Expert 直接调 `ai.generate`
+- M6.2.8 `services/api/expertRuns.js` 真接入：Expert Group captain 串行调所有 members（简化版，不实现 DAG 并行）
+- M6.2.9 `ExpertResult.vue` 真打通：调 `todoApi.create` / `calendarApi.create` 创建数据
+- M6.2.10 数据来源追踪：todo / event 记录 `sourceType` + `sourceRunId`（`sourceType: 'expert'` / `sourceRunId: 123`）
+
+### M6.3 — 专家工作台 · DAG 并行 + SSE + 信用账本（预留 14 天，本轮不交付）
+
+- M6.3.1 DAG 调度器（基于 `run_step_dependencies`）
+- M6.3.2 并行执行（受租户并发上限约束）
+- M6.3.3 SSE 端点 `/expert-runs/{id}/events`
+- M6.3.4 前端 EventSource 客户端
+- M6.3.5 `credit_ledger` 写入 + 幂等键
+- M6.3.6 estimate / charge / refund 流程
 
 ---
 
@@ -211,6 +252,118 @@
 - [ ] AI 代理端点：用户 API Key 加密存后端，前端永远拿不到
 - [ ] 部署：Docker 镜像 + 简易 systemd / IIS 反代
 
+### §3.7 M6 — 专家工作台（概要）
+
+> 详细任务切片见 §3.0 M6.1 / M6.2 / M6.3 节。源文档 `docs/expert-workbench-plan.md` 描述完整平台，本里程碑**只落地 Phase 1（数据契约 + UI）+ Phase 2 前半（真 AI 接入 + 打通）**；DAG 并行 + SSE + 信用账本放入 M6.3 预留。
+
+#### §3.7.1 设计目标
+
+- 让用户能发现并启动一个 **Expert**（专注型 AI 代理）或 **Expert Group**（专家组，captain + members 协作）
+- 每次执行有完整的"运行（Run）"生命周期：草稿 → 排队 → 计划 → 执行 → 综合 → 完成
+- 过程可见、可控：可取消、可重试、不会重复扣费
+- 完成后能**直接落为待办或日历事件**，并保留来源（`sourceType: 'expert'` / `sourceRunId`）
+- AI Key 永远存后端加密，前端**永不接触**
+
+#### §3.7.2 核心领域对象
+
+| 对象 | 含义 | 类比 |
+|---|---|---|
+| **Skill** | 可复用的 AI 能力（如 web 搜索、日历、待办）| 工具 |
+| **Expert** | 单 AI 代理：有角色、流程、工具策略、输出格式 | 专员 |
+| **Expert Group** | 组长 + 成员 + 工作流的多代理协作 | 项目组 |
+| **Expert Run** | 一次具体执行（不可变）| 工单 |
+| **Run Step** | Run 内的子任务（captain 规划或成员执行）| 子工单 |
+| **Run Event** | 用户可见的实时进度事件 | 日志 |
+| **Run Artifact** | 输出文件（Markdown / 图片 / 表格）| 附件 |
+| **Credit Ledger** | 信用账本（estimate / charge / refund）| 账单 |
+
+#### §3.7.3 内置目录（M6.1 注入）
+
+**Expert（6 个）**：
+- Goal decomposition coach（目标分解教练）
+- Daily and weekly planner（日报周报规划师）
+- Review analyst（复盘分析师）
+- Todo organizer（待办整理师）
+- Habit coach（习惯教练）
+- Information organizer（信息整理师）
+
+**Expert Group（3 个）**：
+- Weekly planning group（周规划组）
+- Goal decomposition group（目标分解组）
+- Personal review group（个人复盘组）
+
+#### §3.7.4 状态机
+
+```
+draft → queued → planning → running → synthesizing → completed
+                  │            │              │
+                  └→ failed    └→ cancelled    └→ needs_input
+```
+
+- `draft`：用户在创建页编辑，未提交
+- `queued`：已提交，等待调度（M6.1 mock 立即进入下一态；M6.2 走 AI 网关）
+- `planning`（仅 Group）：captain 拆解任务，生成 step DAG（M6.2 简化为直接列出 members）
+- `running`：Expert / member 正在执行（M6.2 单 Expert 一次 LLM；Group 串行多次）
+- `synthesizing`（仅 Group）：captain 汇总成员结果
+- `completed`：有最终结果
+- `failed` / `cancelled` / `needs_input`：终态
+
+#### §3.7.5 前端页面（M6.1 全部；M6.2 改造为真接入）
+
+| 路由 | 组件 | 作用 |
+|---|---|---|
+| `/experts` | `Experts.vue` | Expert Center：搜索 + 分类筛选 + Expert/Group 切换 + 卡片列表 + 收藏 |
+| `/experts/:id` | `ExpertDetail.vue` | 详情：方法 / 工具 / 示例 / 隐私范围 / 预期输出 / 启动 |
+| `/experts/runs/new` | `ExpertCreateRun.vue` | 创建运行：自然语言 + 上下文引用（todo / plan / event） + 信用确认 |
+| `/experts/runs/:id` | `ExpertRun.vue` | 执行：状态机时间线 + 取消 + 重试（M6.1 轮询 / M6.3 SSE） |
+| `/experts/runs/:id/result` | `ExpertResult.vue` | 结果：执行摘要 + 行动项 + 来源引用 + 创建待办/日历 |
+
+#### §3.7.6 AI 配置页（M6.2 必做）
+
+入口：Me 页 → "设置" → "AI 配置"（`views/Settings.vue` + `components/settings/AiConfigForm.vue`）
+
+字段：
+- **API endpoint**：默认 `https://api.openai.com/v1`，用户可改（DeepSeek / 通义千问 / 自建 OpenAI 兼容服务）
+- **API Key**：密码框，提交时**只发到后端**，前端不存原文（只存后端返回的 masked 标记）
+- **Model**：文本输入，例 `gpt-4o-mini` / `deepseek-chat`
+- **Temperature**：`el-slider` 0~2 步长 0.1
+- **"测试连接"按钮**：调后端 `POST /ai/test` → 用此配置发起一次最小请求，弹 toast 成功/失败
+
+存到后端 `ai_configs`（DataProtection 加密），前端永远拿不到原文。
+
+#### §3.7.7 真接入流程（M6.2）
+
+1. 用户在 `AiConfigForm.vue` 填好配置 → `aiConfig/update` → 后端存 `ai_configs.api_key_enc`
+2. 用户在 `ExpertCreateRun.vue` 提交任务 → `expertRuns/create` → 后端写 `expert_runs` + 调 `/ai/generate`（带用户 Key）→ 写 `ai_call_logs` → 写 `run_events` / `run_steps` → 完成后写 `expert_runs.result_json`
+3. 前端轮询 `GET /expert-runs/{id}`：每 2s 拉一次，看 `status` 与最新 `events`
+4. `completed` 后跳 `ExpertResult.vue`，点击"创建待办"→ 调 `todoApi.create({ ..., sourceType: 'expert', sourceRunId: id })`
+
+#### §3.7.8 与其它里程碑的关系
+
+- **复用 M1** 的 `todoApi.create`：结果落为待办时调用
+- **复用 M2** 的 `calendarApi.create`：结果落为日历事件时调用
+- **不依赖 M3**：M3 的 Skill 池被 M6 整体接管（M3 切片在 §3.0 标注并入 M6.2）
+- **依赖 M5 业务后端**：M6.2 需要 `/ai/generate` 端点（M5.8 已规划）+ `/ai/config` CRUD
+- **前端 AI 网关**：M6.2 复用 M5.8 设计的 `POST /api/v1/ai/generate`，前端永不接触 Key
+
+#### §3.7.9 简化取舍
+
+- **M6.2 Group 简化为串行**：captain 串行调所有 members；不实现 DAG 并行 → 降低 M6.2 工作量
+- **M6.1/M6.2 轮询代替 SSE**：每 2s GET `/expert-runs/{id}`；架构上预留 SSE 升级位（M6.3）
+- **M6.1 不实现真信用账本**：用 `estimated_credits` 字段 mock 占位；M6.3 接入 `credit_ledger`
+- **不实现 M6 取消 + 重试的复杂回滚**：M6.1 仅简单停轮询 + 后端无动作；M6.3 接入队列
+- **不开放自定义 Expert**：仅内置 6 + 3（用户决策"先做核心"）
+
+#### §3.7.10 验收标准
+
+- ✅ 用户能浏览 6 个 Expert + 3 个 Group，看到分类、搜索、详情
+- ✅ 单 Expert Run 能从 queued 跑到 completed，时间线正确显示 6 步
+- ✅ Group Run 串行跑完所有 members
+- ✅ "创建待办"把 run 结果落为 todo，`sourceType='expert'` / `sourceRunId=<id>`
+- ✅ "创建日历事件"把 run 结果落为 event，同上
+- ✅ AI Key 永远只存后端；前端任何位置（localStorage / Vuex / DevTools）都看不到 Key 原文
+- ✅ 未登录态点击 Tab 跳 `/login`
+
 ---
 
 ## §4 C# 后端接口设计
@@ -251,10 +404,21 @@
 | `PUT` | `/api/v1/skills/{id}` | 更新 |
 | `DELETE` | `/api/v1/skills/{id}` | 删除 |
 | `POST` | `/api/v1/ai/generate` | body: `{scope, prompt, input}` → 后端用用户 Key 调 OpenAI |
+| `GET` | `/api/v1/ai/config` | 取 AI 配置（Key 掩码返回） |
+| `PUT` | `/api/v1/ai/config` | 更新 AI 配置（Key 加密存） |
+| `POST` | `/api/v1/ai/test` | 测试连接：用此配置发起一次最小请求 |
 | `GET` | `/api/v1/weather?lat=&lon=` | 代理 Open-Meteo |
 | `GET` | `/api/v1/attachments/{id}` | 取附件 |
 | `POST` | `/api/v1/attachments` | 上传附件（multipart） |
 | `DELETE` | `/api/v1/attachments/{id}` | 删除附件 |
+| `GET` | `/api/v1/experts` | Expert 目录（搜索 / 分类 / 类型：expert / group） |
+| `GET` | `/api/v1/experts/{id}` | Expert / Group 详情 + 当前版本 |
+| `POST` | `/api/v1/expert-runs` | 创建运行（用户提交自然语言任务） |
+| `GET` | `/api/v1/expert-runs/{id}` | 运行快照 + 最终结果（轮询用） |
+| `GET` | `/api/v1/expert-runs/{id}/events` | 进度事件列表（M6.1/M6.2 轮询；M6.3 改 SSE） |
+| `POST` | `/api/v1/expert-runs/{id}/cancel` | 取消运行 |
+| `POST` | `/api/v1/expert-runs/{id}/retry` | 重试失败的步骤 |
+| `POST` | `/api/v1/expert-runs/{id}/actions` | 把结果落为 todo / event（M6.2 打通） |
 
 ### 4.3 EF Core 实体命名
 
@@ -423,6 +587,197 @@ CREATE TABLE ai_configs (
   model       NVARCHAR(64),
   temperature DECIMAL(3,2)
 );
+
+-- ============================================================
+-- M6 专家工作台（11 张表，MySQL 8.0 风格，与上文 M0~M5 表对齐）
+-- 字段参考 docs/expert-workbench-plan.md
+-- ============================================================
+
+-- Expert 身份
+CREATE TABLE IF NOT EXISTS `experts` (
+  `id`          BIGINT       NOT NULL AUTO_INCREMENT,
+  `user_id`     BIGINT       NULL COMMENT 'builtin 时为 NULL；custom 时为所有者 user_id',
+  `code`        VARCHAR(64)  NOT NULL COMMENT 'goal_decomposition / todo_organizer 等',
+  `name`        VARCHAR(128) NOT NULL,
+  `category`    VARCHAR(32)  NOT NULL COMMENT 'productivity / planning / review / info',
+  `type`        VARCHAR(16)  NOT NULL DEFAULT 'builtin' COMMENT 'builtin | custom',
+  `status`      VARCHAR(16)  NOT NULL DEFAULT 'active',
+  `description` TEXT         NULL,
+  `created_at`  DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `updated_at`  DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_experts_code` (`code`, `user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Expert 不可变版本
+CREATE TABLE IF NOT EXISTS `expert_versions` (
+  `id`                     BIGINT       NOT NULL AUTO_INCREMENT,
+  `expert_id`              BIGINT       NOT NULL,
+  `version`                INT          NOT NULL,
+  `persona`                TEXT         NOT NULL COMMENT '角色描述',
+  `methodology`            TEXT         NOT NULL COMMENT '工作方法',
+  `prompt_template`        TEXT         NOT NULL,
+  `tool_policy_json`       JSON         NULL,
+  `knowledge_profile_json` JSON         NULL,
+  `estimated_credits`      INT          NOT NULL DEFAULT 10,
+  `created_at`             DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_ev_expert_version` (`expert_id`, `version`),
+  CONSTRAINT `fk_ev_expert` FOREIGN KEY (`expert_id`) REFERENCES `experts` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Expert Group 身份
+CREATE TABLE IF NOT EXISTS `expert_groups` (
+  `id`                BIGINT       NOT NULL AUTO_INCREMENT,
+  `user_id`           BIGINT       NULL,
+  `code`              VARCHAR(64)  NOT NULL,
+  `name`              VARCHAR(128) NOT NULL,
+  `category`          VARCHAR(32)  NOT NULL,
+  `captain_expert_id` BIGINT       NOT NULL,
+  `status`            VARCHAR(16)  NOT NULL DEFAULT 'active',
+  `description`       TEXT         NULL,
+  `created_at`        DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_eg_code` (`code`, `user_id`),
+  CONSTRAINT `fk_eg_captain` FOREIGN KEY (`captain_expert_id`) REFERENCES `experts` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Expert Group 不可变版本
+CREATE TABLE IF NOT EXISTS `expert_group_versions` (
+  `id`                        BIGINT       NOT NULL AUTO_INCREMENT,
+  `group_id`                  BIGINT       NOT NULL,
+  `version`                   INT          NOT NULL,
+  `orchestration_policy_json` JSON         NULL,
+  `output_schema_json`        JSON         NULL,
+  `estimated_credits`         INT          NOT NULL DEFAULT 30,
+  `created_at`                DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_egv_group_version` (`group_id`, `version`),
+  CONSTRAINT `fk_egv_group` FOREIGN KEY (`group_id`) REFERENCES `expert_groups` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Group 成员（N:N）
+CREATE TABLE IF NOT EXISTS `expert_group_members` (
+  `group_version_id`  BIGINT       NOT NULL,
+  `expert_version_id` BIGINT       NOT NULL,
+  `role`              VARCHAR(32)  NOT NULL COMMENT 'captain | member',
+  `order_no`          INT          NOT NULL DEFAULT 0,
+  `is_required`       TINYINT(1)   NOT NULL DEFAULT 1,
+  PRIMARY KEY (`group_version_id`, `expert_version_id`),
+  CONSTRAINT `fk_egm_gv` FOREIGN KEY (`group_version_id`)  REFERENCES `expert_group_versions` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_egm_ev` FOREIGN KEY (`expert_version_id`) REFERENCES `expert_versions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 用户偏好（收藏 / 最近使用）
+CREATE TABLE IF NOT EXISTS `user_expert_preferences` (
+  `user_id`        BIGINT       NOT NULL,
+  `expert_id`      BIGINT       NOT NULL,
+  `is_favorite`    TINYINT(1)   NOT NULL DEFAULT 0,
+  `last_used_at`   DATETIME(3)  NULL,
+  PRIMARY KEY (`user_id`, `expert_id`),
+  CONSTRAINT `fk_uep_user`   FOREIGN KEY (`user_id`)   REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_uep_expert` FOREIGN KEY (`expert_id`) REFERENCES `experts` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 运行（不可变快照）
+CREATE TABLE IF NOT EXISTS `expert_runs` (
+  `id`                BIGINT       NOT NULL AUTO_INCREMENT,
+  `user_id`           BIGINT       NOT NULL,
+  `source_type`       VARCHAR(16)  NOT NULL COMMENT 'expert | group',
+  `source_version_id` BIGINT       NOT NULL,
+  `input_json`        JSON         NOT NULL,
+  `status`            VARCHAR(16)  NOT NULL DEFAULT 'draft'
+                      COMMENT 'draft|queued|planning|running|synthesizing|completed|failed|cancelled|needs_input',
+  `plan_summary`      TEXT         NULL,
+  `result_json`       JSON         NULL,
+  `estimated_credits` INT          NOT NULL DEFAULT 0,
+  `actual_credits`    INT          NOT NULL DEFAULT 0,
+  `started_at`        DATETIME(3)  NULL,
+  `finished_at`       DATETIME(3)  NULL,
+  `created_at`        DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `updated_at`        DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  KEY `idx_runs_user_status`  (`user_id`, `status`),
+  KEY `idx_runs_user_created` (`user_id`, `created_at`),
+  CONSTRAINT `fk_runs_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 运行步骤
+CREATE TABLE IF NOT EXISTS `run_steps` (
+  `id`                BIGINT       NOT NULL AUTO_INCREMENT,
+  `run_id`            BIGINT       NOT NULL,
+  `parent_step_id`    BIGINT       NULL,
+  `expert_version_id` BIGINT       NOT NULL,
+  `step_type`         VARCHAR(16)  NOT NULL COMMENT 'plan | execute | synthesize',
+  `title`             VARCHAR(255) NOT NULL,
+  `status`            VARCHAR(16)  NOT NULL DEFAULT 'waiting' COMMENT 'waiting|running|done|failed|cancelled',
+  `input_json`        JSON         NULL,
+  `output_json`       JSON         NULL,
+  `started_at`        DATETIME(3)  NULL,
+  `finished_at`       DATETIME(3)  NULL,
+  `created_at`        DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  KEY `idx_steps_run` (`run_id`, `created_at`),
+  CONSTRAINT `fk_steps_run` FOREIGN KEY (`run_id`)            REFERENCES `expert_runs` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_steps_parent` FOREIGN KEY (`parent_step_id`) REFERENCES `run_steps` (`id`),
+  CONSTRAINT `fk_steps_ev`   FOREIGN KEY (`expert_version_id`) REFERENCES `expert_versions` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 步骤 DAG 依赖
+CREATE TABLE IF NOT EXISTS `run_step_dependencies` (
+  `step_id`            BIGINT NOT NULL,
+  `depends_on_step_id` BIGINT NOT NULL,
+  PRIMARY KEY (`step_id`, `depends_on_step_id`),
+  CONSTRAINT `fk_rsd_step` FOREIGN KEY (`step_id`)            REFERENCES `run_steps` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_rsd_dep`  FOREIGN KEY (`depends_on_step_id`) REFERENCES `run_steps` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 实时事件（M6.1/M6.2 轮询；M6.3 改 SSE）
+CREATE TABLE IF NOT EXISTS `run_events` (
+  `id`                   BIGINT       NOT NULL AUTO_INCREMENT,
+  `run_id`               BIGINT       NOT NULL,
+  `step_id`              BIGINT       NULL,
+  `sequence`             INT          NOT NULL COMMENT '同 run 内递增序号',
+  `event_type`           VARCHAR(32)  NOT NULL COMMENT 'status_change | message | error | artifact',
+  `display_payload_json` JSON         NULL,
+  `created_at`           DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  KEY `idx_events_run_seq` (`run_id`, `sequence`),
+  CONSTRAINT `fk_events_run`  FOREIGN KEY (`run_id`)  REFERENCES `expert_runs` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_events_step` FOREIGN KEY (`step_id`) REFERENCES `run_steps` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 产物元信息（文件由对象存储托管，DB 仅存 key）
+CREATE TABLE IF NOT EXISTS `run_artifacts` (
+  `id`            BIGINT       NOT NULL AUTO_INCREMENT,
+  `run_id`        BIGINT       NOT NULL,
+  `step_id`       BIGINT       NULL,
+  `object_key`    VARCHAR(512) NOT NULL,
+  `sha256`        CHAR(64)     NOT NULL,
+  `mime_type`     VARCHAR(64)  NULL,
+  `size_bytes`    BIGINT       NOT NULL DEFAULT 0,
+  `metadata_json` JSON         NULL,
+  `created_at`    DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_artifact_run`  FOREIGN KEY (`run_id`)  REFERENCES `expert_runs` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_artifact_step` FOREIGN KEY (`step_id`) REFERENCES `run_steps` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 信用账本（M6.3 实装；M6.1/M6.2 仅占位）
+CREATE TABLE IF NOT EXISTS `credit_ledger` (
+  `id`              BIGINT       NOT NULL AUTO_INCREMENT,
+  `user_id`         BIGINT       NOT NULL,
+  `run_id`          BIGINT       NULL,
+  `entry_type`      VARCHAR(16)  NOT NULL COMMENT 'estimate | charge | refund',
+  `amount`          INT          NOT NULL COMMENT '正数 = 扣费',
+  `idempotency_key` VARCHAR(64)  NOT NULL,
+  `created_at`      DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_credit_idemp` (`idempotency_key`),
+  KEY `idx_credit_user_time` (`user_id`, `created_at`),
+  CONSTRAINT `fk_credit_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_credit_run`  FOREIGN KEY (`run_id`)  REFERENCES `expert_runs` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ---
@@ -436,6 +791,9 @@ CREATE TABLE ai_configs (
 5. **大附件** → M1 限制单文件 ≤ 10MB；M5 后端用流式上传。
 6. **iOS 100vh 问题** → 已用 `padding-bottom: env(safe-area-inset-bottom)` 兜底；后续可视情况引入 `100dvh` polyfill。
 7. **PWA 与 iOS** → iOS 不支持 `beforeinstallprompt`；提供"添加到主屏"引导说明即可。
+8. **M6 Group 简化为串行** → M6.2 不实现 DAG 并行调度，复杂 Group（>3 members）响应可能 30s+；M6.3 升级为真正的并行。
+9. **M6 轮询代替 SSE** → M6.1 / M6.2 用每 2s GET `/expert-runs/{id}`；前端开销小，后端无状态；M6.3 升级 SSE。
+10. **M6 用户级目录 vs 全局内置** → 内置 6 + 3 用 `user_id=NULL` 表示全局可见；自定义（暂未开放）走 `user_id=<self>`；查询用 `user_id IS NULL OR user_id = ?`。
 
 ---
 
@@ -444,6 +802,8 @@ CREATE TABLE ai_configs (
 | 日期 | 里程碑 | 变更 |
 |---|---|---|
 | 2026-07-30 | M0 | 首版脚手架 + 首页 Dashboard + 3 套主题交付 |
+| 2026-08-03 | M6.1~M6.3 | 专家工作台立项：参考 `docs/expert-workbench-plan.md`，分 3 阶段（M6.1 数据契约+UI+Mock / M6.2 真 AI 接入+配置页+打通 / M6.3 DAG+SSE+信用账本预留）。技术栈沿用 MySQL + SqlSugar + AI 网关，AI Key 加密存后端。新增"专家"Tab；DDL 11 张表增入 §5；端点 8 个增入 §4.2 |
+| 2026-08-03 | M3 → M6 合并 | M3（AI 周报/日报）切片整体并入 M6.2，作为内置 Skill 中的 `daily-report` / `weekly-report` |
 
 ---
 
@@ -494,6 +854,11 @@ CREATE TABLE ai_configs (
 | 2026-07-30 | 附件存本地磁盘 | SQL VARBINARY(MAX) 备份 / 迁移成本高 | M5 部署需挂载卷 |
 | 2026-07-30 | 认证 = 手机号 + 密码 | 国内移动端主流；OAuth 留二期 | M4 表单 / 中间件均围绕此 |
 | 2026-07-30 | LWW 同步 | OT / CRDT 工期成本高 | M4 引入文档需说明 |
+| 2026-08-03 | M6 新增"专家"Tab | 与 `docs/expert-workbench-plan.md`"不新增 Tab"建议相反 | 用户明确要求；底部 Tab 改 5 个（首页/待办/日历/专家/我的） |
+| 2026-08-03 | M6 沿用 MySQL + SqlSugar | 不切 SQL Server + EF Core | 与 BACKEND_DESIGN 决策一致；DDL 已统一为 MySQL 8.0 风格 |
+| 2026-08-03 | M6.2 Group 简化为串行 | 不实现 DAG 并行 | 工作量控制，避免本轮过度工程；M6.3 升级 |
+| 2026-08-03 | M6.1/M6.2 轮询代替 SSE | 2s GET 一次 | 简化实现；架构预留 SSE 升级位 |
+| 2026-08-03 | M3 整体并入 M6.2 | M3 范围（Skill 池 / 日报周报）与 M6 内置 Skill 重复 | 文档统一收敛；M3 不再单独排期 |
 
 ---
 
