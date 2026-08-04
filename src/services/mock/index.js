@@ -13,7 +13,7 @@ export function setupMock (httpInstance) {
   // 第 2 批：registerCalendar / registerSkills / registerAi / registerWeather / registerAttachments
   if (typeof window !== 'undefined') {
     // eslint-disable-next-line no-console
-    console.info('[HomeMind] axios-mock-adapter 已挂载（VUE_APP_USE_MOCK=true）')
+    console.info('[NexusMind] axios-mock-adapter 已挂载（VUE_APP_USE_MOCK=true）')
   }
   return mock
 }

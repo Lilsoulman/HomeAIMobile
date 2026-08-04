@@ -1,6 +1,6 @@
 {
-    "name": "home_mind_mobile",
-    "short_name": "home_mind_mobile",
+    "name": "NexusMind - 个人效率助手",
+    "short_name": "NexusMind",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

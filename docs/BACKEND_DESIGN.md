@@ -1,7 +1,8 @@
-# HomeMind 业务后端设计文档
+# NexusMind 业务后端设计文档
 
-> 本文档面向**后续写 .NET 后端代码的同事**，基于 `D:\HomeMind\core` 已搭好的 9 项目解决方案，按本文档的"实体 → 仓储 → 服务 → 控制器"骨架填充代码即可。
-> 配套前端：`D:\HomeMind\mobile`，端点定义见 `PROJECT_PLAN.md §4.2`。
+> 本文档面向**后续写 .NET 后端代码的同事**，基于 `D:\NexusMind\core` 已搭好的 9 项目解决方案，按本文档的"实体 → 仓储 → 服务 → 控制器"骨架填充代码即可。
+> 配套客户端：`D:\HomeMind\mobile` Flutter 工程；端点定义仅见本文 §7，
+> 客户端映射见 `docs/api-integration.md`。
 > 写作日期：2026-08-03；对应里程碑：M4（账号 + 同步） + M5（业务后端）。
 
 ---
@@ -12,36 +13,36 @@
 
 | 后端 | 项目 | 职责 | 状态 |
 |---|---|---|---|
-| **AI 网关** | `D:\HomeMind\core\HomeMind.Api`（未来加 `AIController`） | 接收前端 `/api/v1/ai/generate`，用用户 Key 调 OpenAI 兼容 `/chat/completions`；Key 加密存 | M3 阶段 |
-| **业务后端** | 新建 `D:\HomeMind\core\HomeMind.Business.Api`（独立 WebApi 项目，复用现有分层） | 账户 / Todo / 日历 / 订阅 / iCal 代理 / 天气代理 / 附件 / 同步 | M4~M5 |
+| **AI 网关** | `D:\NexusMind\core\NexusMind.Api`（加 `AIController`） | 接收客户端 `/api/v1/ai/generate`，用用户 Key 调 OpenAI 兼容 `/chat/completions`；Key 加密存 | M5.3 |
+| **业务后端** | 新建 `D:\NexusMind\core\NexusMind.Business.Api`（独立 WebApi 项目，复用现有分层） | 账户 / Todo / 日历 / 订阅 / iCal 代理 / 天气代理 / 附件 / 同步 | M4~M5 |
 
-> **命名说明**：本计划将当前 `HomeMind.Api` 视为"AI 网关+业务后端二合一"的 WebApi 入口（`/api/v1/ai/*` 给 AI，`/api/v1/todos` 等给业务）。如果你倾向拆为两个独立 WebApi 项目，可把 `HomeMind.Api` 改名为 `HomeMind.AIGateway`，新建 `HomeMind.Business.Api`。下文按"二合一"方案描述，二者路由前缀不同即可。
+> **命名说明**：本计划将当前 `NexusMind.Api` 视为"AI 网关+业务后端二合一"的 WebApi 入口（`/api/v1/ai/*` 给 AI，`/api/v1/todos` 等给业务）。如果你倾向拆为两个独立 WebApi 项目，可把 `NexusMind.Api` 改名为 `NexusMind.AIGateway`，新建 `NexusMind.Business.Api`。下文按"二合一"方案描述，二者路由前缀不同即可。
 
 ### 1.2 现有解决方案结构
 
 ```
-HomeMind.Core.sln
-├── HomeMind.Api                          [Web入口 .NET 8]     ← 注册服务、Swagger、JWT、CORS
-├── HomeMind.Business.IServices           [业务接口]           ← IService 接口
-├── HomeMind.Business.Services            [业务实现]           ← Service 实现
-├── HomeMind.Common.Helpers               [工具类]             ← JwtHelper / BCryptHelper / EncryptionHelper
-├── HomeMind.Common.IRepository           [仓储接口]           ← IRepository<T> 基础 + IXxxRepository
-├── HomeMind.Common.IServices             [通用业务接口]        ← 预留（与 Business.IServices 区分）
-├── HomeMind.Common.Infrastructure        [基础设施]           ← DbContext / DI 扩展
-├── HomeMind.Common.Model                 [实体]               ← SqlSugar 实体类
-└── HomeMind.Common.Repository            [仓储实现]           ← BaseRepository<T> + 仓储实现
+NexusMind.Core.sln
+├── NexusMind.Api                          [Web入口 .NET 8]     ← 注册服务、Swagger、JWT、CORS
+├── NexusMind.Business.IServices           [业务接口]           ← IService 接口
+├── NexusMind.Business.Services            [业务实现]           ← Service 实现
+├── NexusMind.Common.Helpers               [工具类]             ← JwtHelper / BCryptHelper / EncryptionHelper
+├── NexusMind.Common.IRepository           [仓储接口]           ← IRepository<T> 基础 + IXxxRepository
+├── NexusMind.Common.IServices             [通用业务接口]        ← 预留（与 Business.IServices 区分）
+├── NexusMind.Common.Infrastructure        [基础设施]           ← DbContext / DI 扩展
+├── NexusMind.Common.Model                 [实体]               ← SqlSugar 实体类
+└── NexusMind.Common.Repository            [仓储实现]           ← BaseRepository<T> + 仓储实现
 ```
 
 ### 1.3 调用关系图
 
 ```
 ┌──────────────┐
-│ Mobile (H5)  │
+│ Flutter app  │
 └──────┬───────┘
        │ HTTPS /api/v1/*
        ▼
 ┌──────────────────────────────┐
-│  HomeMind.Api (WebApi)       │  ← JwtBearer 中间件 + CORS
+│  NexusMind.Api (WebApi)       │  ← JwtBearer 中间件 + CORS
 │  Controllers/*               │
 └──┬──────────┬─────────┬──────┘
    │          │         │
@@ -79,7 +80,7 @@ HomeMind.Core.sln
 ### 2.3 时序图
 
 ```
-用户                     Mobile H5              HomeMind.Api           MySQL
+用户                   Flutter app              NexusMind.Api           MySQL
  │                          │                       │                    │
  │ 1. 输入 phone + password │                       │                    │
  ├─────────────────────────►│                       │                    │
@@ -95,14 +96,14 @@ HomeMind.Core.sln
  │                          │                       ├───────────────────►│
  │                          │ 8. {accessToken, refreshToken, user}         │
  │                          │◄──────────────────────┤                    │
- │ 9. 存 localStorage       │                       │                    │
+ │ 9. 存 secure storage     │                       │                    │
  │◄─────────────────────────┤                       │                    │
 ```
 
 ### 2.4 控制器骨架
 
 ```csharp
-// HomeMind.Api/Controllers/AuthController.cs
+// NexusMind.Api/Controllers/AuthController.cs
 [ApiController]
 [Route("api/v1/auth")]
 public class AuthController : ControllerBase
@@ -401,13 +402,13 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 ## §4 实体类骨架（SqlSugar）
 
-放置位置：`HomeMind.Common.Model/Entities/*.cs`
+放置位置：`NexusMind.Common.Model/Entities/*.cs`
 
 ```csharp
-// HomeMind.Common.Model/Entities/User.cs
+// NexusMind.Common.Model/Entities/User.cs
 using SqlSugar;
 
-namespace HomeMind.Common.Model.Entities;
+namespace NexusMind.Common.Model.Entities;
 
 [SugarTable("users")]
 public class User
@@ -442,10 +443,10 @@ public class User
 ```
 
 ```csharp
-// HomeMind.Common.Model/Entities/Todo.cs
+// NexusMind.Common.Model/Entities/Todo.cs
 using SqlSugar;
 
-namespace HomeMind.Common.Model.Entities;
+namespace NexusMind.Common.Model.Entities;
 
 [SugarTable("todos")]
 public class Todo
@@ -515,14 +516,14 @@ public class Subtask
 
 ## §5 仓储接口骨架
 
-放置位置：`HomeMind.Common.IRepository/`
+放置位置：`NexusMind.Common.IRepository/`
 
 ```csharp
-// HomeMind.Common.IRepository/IBaseRepository.cs
+// NexusMind.Common.IRepository/IBaseRepository.cs
 using SqlSugar;
 using System.Linq.Expressions;
 
-namespace HomeMind.Common.IRepository;
+namespace NexusMind.Common.IRepository;
 
 public interface IBaseRepository<T> where T : class, new()
 {
@@ -538,10 +539,10 @@ public interface IBaseRepository<T> where T : class, new()
 ```
 
 ```csharp
-// HomeMind.Common.IRepository/IUserRepository.cs
-using HomeMind.Common.Model.Entities;
+// NexusMind.Common.IRepository/IUserRepository.cs
+using NexusMind.Common.Model.Entities;
 
-namespace HomeMind.Common.IRepository;
+namespace NexusMind.Common.IRepository;
 
 public interface IUserRepository : IBaseRepository<User>
 {
@@ -551,10 +552,10 @@ public interface IUserRepository : IBaseRepository<User>
 ```
 
 ```csharp
-// HomeMind.Common.IRepository/ITodoRepository.cs
-using HomeMind.Common.Model.Entities;
+// NexusMind.Common.IRepository/ITodoRepository.cs
+using NexusMind.Common.Model.Entities;
 
-namespace HomeMind.Common.IRepository;
+namespace NexusMind.Common.IRepository;
 
 public interface ITodoRepository : IBaseRepository<Todo>
 {
@@ -565,10 +566,10 @@ public interface ITodoRepository : IBaseRepository<Todo>
 ```
 
 ```csharp
-// HomeMind.Common.IRepository/IRefreshTokenRepository.cs
-using HomeMind.Common.Model.Entities;
+// NexusMind.Common.IRepository/IRefreshTokenRepository.cs
+using NexusMind.Common.Model.Entities;
 
-namespace HomeMind.Common.IRepository;
+namespace NexusMind.Common.IRepository;
 
 public interface IRefreshTokenRepository : IBaseRepository<RefreshToken>
 {
@@ -578,14 +579,14 @@ public interface IRefreshTokenRepository : IBaseRepository<RefreshToken>
 }
 ```
 
-实现位置：`HomeMind.Common.Repository/`
+实现位置：`NexusMind.Common.Repository/`
 
 ```csharp
-// HomeMind.Common.Repository/BaseRepository.cs
-using HomeMind.Common.IRepository;
+// NexusMind.Common.Repository/BaseRepository.cs
+using NexusMind.Common.IRepository;
 using SqlSugar;
 
-namespace HomeMind.Common.Repository;
+namespace NexusMind.Common.Repository;
 
 public abstract class BaseRepository<T> : IBaseRepository<T> where T : class, new()
 {
@@ -631,13 +632,13 @@ public abstract class BaseRepository<T> : IBaseRepository<T> where T : class, ne
 
 ## §6 服务接口骨架
 
-放置位置：`HomeMind.Business.IServices/` 与 `HomeMind.Business.Services/`
+放置位置：`NexusMind.Business.IServices/` 与 `NexusMind.Business.Services/`
 
 ```csharp
-// HomeMind.Business.IServices/IAuthService.cs
-using HomeMind.Common.Model.Dtos;
+// NexusMind.Business.IServices/IAuthService.cs
+using NexusMind.Common.Model.Dtos;
 
-namespace HomeMind.Business.IServices;
+namespace NexusMind.Business.IServices;
 
 public interface IAuthService
 {
@@ -650,10 +651,10 @@ public interface IAuthService
 ```
 
 ```csharp
-// HomeMind.Business.IServices/ITodoService.cs
-using HomeMind.Common.Model.Dtos;
+// NexusMind.Business.IServices/ITodoService.cs
+using NexusMind.Common.Model.Dtos;
 
-namespace HomeMind.Business.IServices;
+namespace NexusMind.Business.IServices;
 
 public interface ITodoService
 {
@@ -667,7 +668,7 @@ public interface ITodoService
 ```
 
 ```csharp
-// HomeMind.Business.Services/AuthService.cs（关键实现）
+// NexusMind.Business.Services/AuthService.cs（关键实现）
 public class AuthService : IAuthService
 {
     private readonly IUserRepository _users;
@@ -742,9 +743,11 @@ public class AuthService : IAuthService
 
 ---
 
-## §7 控制器路由表（与前端 §4.2 端点 1:1 对照）
+## §7 控制器路由表（移动端唯一 API 契约）
 
-> 前缀：`/api/v1`，所有响应统一包成 `ApiResponse<T> { code, msg, data }`
+> 前缀：`/api/v1`，所有响应统一包成 `ApiResponse<T> { Code, Msg, Data }`。
+> 请求 JSON 使用 camelCase；响应包络与 `Data` 内 DTO 字段使用 PascalCase，和 Flutter
+> `ApiEnvelope` / DTO mapper 保持一致。
 > 除明确标注 `[AllowAnonymous]` 外，默认都要 `[Authorize]`（JWT 鉴权）
 
 | Method | Path | Auth | 控制器方法 | 请求 DTO | 响应 DTO |
@@ -776,12 +779,22 @@ public class AuthService : IAuthService
 | `POST` | `/ai/generate` | Required | `AiController.Generate` | `{ scope, prompt, input, model?, temperature? }` | `{ content, usage }` |
 | `GET`  | `/ai/config` | Required | `AiController.GetConfig` | — | `AiConfigDto` |
 | `PUT`  | `/ai/config` | Required | `AiController.UpdateConfig` | `AiConfigUpdateDto` | `AiConfigDto` |
+| `POST` | `/ai/test` | Required | `AiController.TestConfig` | `AiConfigUpdateDto` | `{ available, model }` |
+| `GET` | `/experts` | Required | `ExpertsController.List` | query: `query, category` | `List<ExpertDto>` |
+| `GET` | `/experts/{id}` | Required | `ExpertsController.Detail` | — | `ExpertDetailDto` |
+| `GET` | `/expert-runs` | Required | `ExpertRunsController.List` | query: `cursor?, limit?` | `RunPageDto` |
+| `POST` | `/expert-runs` | Required | `ExpertRunsController.Create` | `CreateExpertRunRequest` | `ExpertRunDto` |
+| `GET` | `/expert-runs/{id}` | Required | `ExpertRunsController.Get` | — | `ExpertRunDto` |
+| `GET` | `/expert-runs/{id}/events` | Required | `ExpertRunsController.Events` | query: `afterSequence?` | `List<RunEventDto>` |
+| `POST` | `/expert-runs/{id}/cancel` | Required | `ExpertRunsController.Cancel` | — | `ExpertRunDto` |
+| `POST` | `/expert-runs/{id}/retry` | Required | `ExpertRunsController.Retry` | `{ idempotencyKey }` | `ExpertRunDto` |
+| `POST` | `/expert-runs/{id}/actions` | Required | `ExpertRunsController.ConfirmAction` | `ConfirmRunActionRequest` | `RunActionResultDto` |
 | `GET`  | `/weather` | Required | `WeatherController.Get` | query: `lat, lon` | `WeatherDto` |
 | `GET`  | `/attachments/{id}` | Required | `AttachmentsController.Download` | — | binary stream |
 | `POST` | `/attachments` | Required | `AttachmentsController.Upload` | `multipart/form-data` | `AttachmentDto` |
 | `DELETE` | `/attachments/{id}` | Required | `AttachmentsController.Delete` | — | `{ id }` |
-| `POST` | `/sync/pull` | Required | `SyncController.Pull` | `{ entity, since }` | `{ items, serverTime }` |
-| `POST` | `/sync/push` | Required | `SyncController.Push` | `{ entity, items }` | `{ accepted, conflicts }` |
+| `POST` | `/sync/pull` | Required | `SyncController.Pull` | `{ entity, cursor?, limit? }` | `{ items, nextCursor, serverTime }` |
+| `POST` | `/sync/push` | Required | `SyncController.Push` | `{ entity, items, idempotencyKey }` | `{ accepted, conflicts, serverTime }` |
 | `POST` | `/push/subscribe` | Required | `PushController.Subscribe` | `{ endpoint, p256dh, auth }` | `{ id }` |
 | `DELETE` | `/push/subscribe/{id}` | Required | `PushController.Unsubscribe` | — | `{ id }` |
 
@@ -789,9 +802,21 @@ public class AuthService : IAuthService
 
 - 请求：`XxxRequest` / `XxxCreateDto` / `XxxUpdateDto`（按 verb 区分）
 - 响应：`XxxDto`（出参） / `LoginResultDto` / `ApiResponse<T>`
-- 全部放 `HomeMind.Common.Model/Dtos/`
+- 全部放 `NexusMind.Common.Model/Dtos/`
 
-### 7.2 错误码映射
+### 7.2 Expert Run 请求语义
+
+- `CreateExpertRunRequest`：`sourceType` (`expert` / `group`)、`sourceId`、
+  `inputJson`、`idempotencyKey`。同一用户和幂等键必须返回同一个 Run。
+- `ConfirmRunActionRequest`：`actionType` (`todos` / `calendar_events`)、
+  `requestJson`、`idempotencyKey`。重复确认只能创建一次目标记录，并返回
+  已创建记录和 source 关联。
+- `RunEventDto.sequence` 在同一 Run 内严格递增；`afterSequence` 允许轮询客户端
+  在断线后续传。M6.3 的 SSE 复用该 DTO，不另建事件格式。
+- Run 创建只入队并返回快照；模型调用、状态推进和最终写入由后台 worker 处理，
+  不得占用 HTTP 请求线程。
+
+### 7.3 错误码映射
 
 | code | 含义 | HTTP |
 |---|---|---|
@@ -808,7 +833,7 @@ public class AuthService : IAuthService
 
 ## §8 AI 网关与业务后端调用关系
 
-> 本项目**只有一个 WebApi 进程**（`HomeMind.Api`），所以"网关 vs 业务"在同一进程内按 Controller 路由区分：
+> 本项目**只有一个 WebApi 进程**（`NexusMind.Api`），所以"网关 vs 业务"在同一进程内按 Controller 路由区分：
 > - `/api/v1/ai/*` 走 `AiController`（用 `IHttpClientFactory` 调外部 OpenAI 兼容 endpoint）
 > - `/api/v1/*` 其余走业务 Controller
 
@@ -884,7 +909,7 @@ public class AiController : ControllerBase
 builder.Services.AddHttpClient("openai", c =>
 {
     c.Timeout = TimeSpan.FromSeconds(60);
-    c.DefaultRequestHeaders.Add("User-Agent", "HomeMind/1.0");
+    c.DefaultRequestHeaders.Add("User-Agent", "NexusMind/1.0");
 });
 ```
 
@@ -899,7 +924,7 @@ builder.Services.AddHttpClient("openai", c =>
 
 ### 9.2 JWT
 
-- `Jwt:Key` 至少 32 字节，从环境变量 `HOMEMIND_JWT_KEY` 注入（不直接写 appsettings.json）
+- `Jwt:Key` 至少 32 字节，从环境变量 `NEXUSMIND_JWT_KEY` 注入（不直接写 appsettings.json）
 - Access Token 15 min，Refresh Token 7 d
 - Refresh Token 旋转：旧 token 撤销后再发新；并发场景允许旧 token 在 24h 内一次性重试
 
@@ -949,8 +974,8 @@ builder.Services.AddCors(opt => {
 
 按下列顺序填充代码，每步可独立运行验证：
 
-1. **基础设施**：`HomeMind.Common.Infrastructure` 加 `DbContext`（封装 SqlSugar）+ DI 扩展 `AddHomeMind()`；Program.cs 注册 Db、Swagger、JwtBearer、CORS
-2. **Helpers**：`HomeMind.Common.Helpers` 写 `JwtHelper / BCryptHelper / EncryptionHelper / Sha256Helper`
+1. **基础设施**：`NexusMind.Common.Infrastructure` 加 `DbContext`（封装 SqlSugar）+ DI 扩展 `AddNexusMind()`；Program.cs 注册 Db、Swagger、JwtBearer、CORS
+2. **Helpers**：`NexusMind.Common.Helpers` 写 `JwtHelper / BCryptHelper / EncryptionHelper / Sha256Helper`
 3. **Model**：填充 12 个实体类（`User / Todo / Subtask / RefreshToken / Attachment / CalendarEvent / CalendarSubscription / ICalOverride / AiSkill / UserSetting / AiConfig / AiCallLog / SyncRecord`）
 4. **IRepository + Repository**：写 `BaseRepository<T>` + 6 个具体仓储
 5. **IServices + Services**：先做 `AuthService`（含注册/登录/刷新）+ `UserService`
@@ -972,6 +997,6 @@ builder.Services.AddCors(opt => {
 
 ## §11 关联文档
 
-- `PROJECT_PLAN.md §4` —— 端点定义来源
-- `PROJECT_PLAN.md §5` —— 原 SQL Server DDL（已改写为 MySQL 适配版）
-- `PROJECT_PLAN.md §3.5` (M3) / `§3.6` (M4) / `§3.7` (M5) —— 功能点与切片
+- `PROJECT_PLAN.md` —— 里程碑依赖、验收、测试和发布门槛
+- `docs/api-integration.md` —— Flutter 客户端的 DTO/Repository 映射
+- `docs/EXPERT_DOMAIN.md` —— Expert Run 的移动端领域边界

@@ -19,7 +19,7 @@ const router = new VueRouter({
 })
 
 router.afterEach(to => {
-  if (to.meta && to.meta.title) document.title = `${to.meta.title} · HomeMind`
+  if (to.meta && to.meta.title) document.title = `${to.meta.title} · NexusMind`
 })
 
 // 暴露 store 给 persistence 装订阅器（避免循环依赖，单独 install）

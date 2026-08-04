@@ -1,6 +1,6 @@
 // 极简 localStorage 封装
-// 品牌：HomeMind（M0.5 起；启动时 migrate 一次性把 homeai_ 复制到 homemind_）
-const PREFIX = 'homemind_'
+// 品牌：NexusMind；启动时迁移 homeai_ 与 homemind_ 遗留数据。
+const PREFIX = 'nexusmind_'
 
 export const storage = {
   get (key, fallback = null) {

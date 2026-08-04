@@ -2,7 +2,7 @@
   <div class="login-view">
     <div class="hero">
       <div class="logo">🏠</div>
-      <div class="title">HomeMind</div>
+      <div class="title">NexusMind</div>
       <div class="sub">让待办、日历与 AI 成为一体</div>
     </div>
 

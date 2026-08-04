@@ -1,4 +1,4 @@
-package com.example.home_mind_mobile
+package com.example.nexus_mind_mobile
 
 import io.flutter.embedding.android.FlutterActivity
 

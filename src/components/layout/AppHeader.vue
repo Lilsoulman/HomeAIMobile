@@ -3,7 +3,7 @@
     <div class="app-header-inner">
       <div class="brand">
         <span class="brand-dot" />
-        <span class="brand-name">HomeMind</span>
+        <span class="brand-name">NexusMind</span>
       </div>
       <div class="header-right">
         <button class="icon-btn" @click="$router.push('/me')" aria-label="设置">
