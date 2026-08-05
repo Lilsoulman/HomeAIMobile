@@ -1,23 +1,25 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nexus_mind_mobile/core/api/api_client.dart';
 import 'package:nexus_mind_mobile/core/env/env_config.dart';
 import 'package:nexus_mind_mobile/core/storage/token_storage.dart';
 import 'package:nexus_mind_mobile/core/ui/nexus_theme.dart';
+import 'package:nexus_mind_mobile/experts/domain.dart';
 import 'package:nexus_mind_mobile/experts/expert_repository.dart';
-import 'package:nexus_mind_mobile/experts/mock_expert_repository.dart';
 import 'package:nexus_mind_mobile/features/auth/auth_controller.dart';
-import 'package:nexus_mind_mobile/features/auth/local_auth_repository.dart';
+import 'package:nexus_mind_mobile/features/auth/http_auth_repository.dart';
 import 'package:nexus_mind_mobile/features/calendar/calendar_repository.dart';
-import 'package:nexus_mind_mobile/features/calendar/local_calendar_repository.dart';
+import 'package:nexus_mind_mobile/features/calendar/dto.dart';
 import 'package:nexus_mind_mobile/features/smart_home/dto.dart';
-import 'package:nexus_mind_mobile/features/smart_home/local_smart_home_repository.dart';
 import 'package:nexus_mind_mobile/features/smart_home/smart_home_repository.dart';
-import 'package:nexus_mind_mobile/features/todo/local_todo_repository.dart';
+import 'package:nexus_mind_mobile/features/todo/dto.dart';
 import 'package:nexus_mind_mobile/features/todo/todo_repository.dart';
 import 'package:nexus_mind_mobile/pages/dashboard_page.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+final _now = DateTime.now();
 
 void main() {
   testWidgets(
@@ -25,20 +27,23 @@ void main() {
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(400, 1600));
       addTearDown(() => tester.binding.setSurfaceSize(null));
-      final smartHome = _RetryingSmartHomeRepository();
+
+      SharedPreferences.setMockInitialValues({});
+      final env = await EnvConfig.init(
+        fileValues: const {'API_BASE_URL': 'https://api.example.com'},
+      );
+      final smartHome = _RetryingSmartHomeRepo();
 
       await tester.pumpWidget(
         MultiProvider(
           providers: [
             ChangeNotifierProvider<AuthController>.value(
-              value: await _signedInAuth(),
+              value: await _signedInAuth(env),
             ),
-            Provider<TodoRepository>.value(value: LocalTodoRepository()),
-            Provider<CalendarRepository>.value(
-              value: LocalCalendarRepository(),
-            ),
+            Provider<TodoRepository>.value(value: _StubTodoRepo()),
+            Provider<CalendarRepository>.value(value: _StubCalendarRepo()),
             Provider<SmartHomeRepository>.value(value: smartHome),
-            Provider<ExpertRepository>.value(value: MockExpertRepository()),
+            Provider<ExpertRepository>.value(value: _StubExpertRepo()),
           ],
           child: MaterialApp(
             theme: NexusTheme.light(NexusPalette.aiAccent),
@@ -63,67 +68,275 @@ void main() {
   );
 }
 
-Future<AuthController> _signedInAuth() async {
-  SharedPreferences.setMockInitialValues({});
-  final env = await EnvConfig.init();
-  final storage = _MemoryTokens();
-  final repository = LocalAuthRepository();
+Future<AuthController> _signedInAuth(EnvConfig env) async {
+  final storage = _MemTokens();
+  final api = ApiClient(tokenStorage: storage, env: env);
+  api.dio.interceptors.add(
+    InterceptorsWrapper(
+      onRequest: (options, handler) {
+        handler.resolve(
+          Response<dynamic>(
+            requestOptions: options,
+            statusCode: 200,
+            data: {
+              'Code': 0,
+              'Msg': 'ok',
+              'Data': {'Id': 1, 'DisplayName': 'Tester'},
+            },
+          ),
+        );
+      },
+    ),
+  );
   final auth = AuthController(
-    apiClient: ApiClient(tokenStorage: storage, env: env),
+    apiClient: api,
     tokenStorage: storage,
-    repository: repository,
+    repository: HttpAuthRepository(api),
   );
-  await auth.register(
-    phone: '13800138000',
-    password: 'offline-password',
-    displayName: 'Dashboard tester',
-  );
+  storage.access = 'a';
+  storage.refresh = 'r';
+  api.setAccessToken('a');
   return auth;
 }
 
-class _MemoryTokens implements TokenStorage {
+class _StubTodoRepo implements TodoRepository {
   @override
-  Future<void> clear() async {}
+  Future<List<TodoDto>> list({
+    String? status,
+    DateTime? from,
+    DateTime? to,
+  }) async => [
+    TodoDto(
+      id: 1,
+      title: '整理',
+      status: TodoStatus.pending,
+      pinned: false,
+      sortOrder: 0,
+      createdAt: _now,
+      updatedAt: _now,
+    ),
+    TodoDto(
+      id: 2,
+      title: '确认',
+      status: TodoStatus.pending,
+      pinned: false,
+      sortOrder: 0,
+      createdAt: _now,
+      updatedAt: _now,
+    ),
+  ];
+  @override
+  Future<TodoDto> create({
+    required String title,
+    String? description,
+    String? type,
+    String? priority,
+    String? color,
+    String? status,
+    DateTime? dueAt,
+    DateTime? remindAt,
+    bool? pinned,
+    int? sortOrder,
+    String? repeatRule,
+    int? parentId,
+  }) async => TodoDto(
+    id: 3,
+    title: title,
+    status: TodoStatus.pending,
+    pinned: false,
+    sortOrder: 0,
+    createdAt: _now,
+    updatedAt: _now,
+  );
+  @override
+  Future<TodoDto> update(int id, Map<String, dynamic> patch) async => TodoDto(
+    id: id,
+    title: '',
+    status: TodoStatus.pending,
+    pinned: false,
+    sortOrder: 0,
+    createdAt: _now,
+    updatedAt: _now,
+  );
+  @override
+  Future<void> delete(int id) async {}
+  @override
+  Future<List<SubtaskDto>> listSubtasks(int todoId) async => [];
+  @override
+  Future<SubtaskDto> addSubtask(
+    int todoId, {
+    required String text,
+    int? seq,
+  }) async => SubtaskDto(id: 1, text: text, done: false, seq: 0);
+  @override
+  Future<SubtaskDto> updateSubtask(
+    int todoId,
+    int subId,
+    Map<String, dynamic> patch,
+  ) async => SubtaskDto(id: subId, text: '', done: false, seq: 0);
+  @override
+  Future<void> deleteSubtask(int todoId, int subId) async {}
+}
+
+class _StubCalendarRepo implements CalendarRepository {
+  @override
+  Future<List<CalendarEventDto>> listEvents({
+    DateTime? from,
+    DateTime? to,
+  }) async => [];
+  @override
+  Future<CalendarEventDto> createEvent({
+    required String title,
+    String? description,
+    String? location,
+    required DateTime startAt,
+    DateTime? endAt,
+    String? timezone,
+    bool? allDay,
+    String? color,
+    double? opacity,
+    String? repeatRule,
+  }) async => CalendarEventDto(
+    id: 1,
+    title: title,
+    startAt: startAt,
+    endAt: endAt,
+    timezone: 'UTC',
+    allDay: allDay ?? false,
+    opacity: 1.0,
+    createdAt: _now,
+    updatedAt: _now,
+  );
+  @override
+  Future<CalendarEventDto> updateEvent(
+    int id,
+    Map<String, dynamic> patch,
+  ) async => CalendarEventDto(
+    id: id,
+    title: '',
+    startAt: _now,
+    endAt: _now,
+    timezone: 'UTC',
+    allDay: false,
+    opacity: 1.0,
+    createdAt: _now,
+    updatedAt: _now,
+  );
+  @override
+  Future<void> deleteEvent(int id) async {}
+  @override
+  Future<List<CalendarSubscriptionDto>> listSubscriptions() async => [];
+  @override
+  Future<CalendarSubscriptionDto> createSubscription({
+    required String url,
+    String? name,
+    bool? enabled,
+    int? refreshIntervalMin,
+  }) async => CalendarSubscriptionDto(
+    id: 1,
+    name: name ?? url,
+    enabled: enabled ?? true,
+    refreshIntervalMin: refreshIntervalMin ?? 60,
+    createdAt: _now,
+  );
+  @override
+  Future<CalendarSubscriptionDto> updateSubscription(
+    int id,
+    Map<String, dynamic> patch,
+  ) async => CalendarSubscriptionDto(
+    id: id,
+    name: '',
+    enabled: false,
+    refreshIntervalMin: 60,
+    createdAt: _now,
+  );
+  @override
+  Future<void> deleteSubscription(int id) async {}
+}
+
+class _StubExpertRepo implements ExpertRepository {
+  @override
+  Future<Expert?> getExpert(
+    String id, {
+    required ExpertSourceType sourceType,
+  }) async => null;
+  @override
+  Future<List<Expert>> listExperts({String query = ''}) async => [];
+}
+
+class _MemTokens implements TokenStorage {
+  String? access, refresh;
+  @override
+  Future<void> clear() async {
+    access = null;
+    refresh = null;
+  }
 
   @override
-  Future<String?> readAccessToken() async => null;
-
+  Future<String?> readAccessToken() async => access;
   @override
-  Future<String?> readRefreshToken() async => null;
-
+  Future<String?> readRefreshToken() async => refresh;
   @override
   Future<void> write({
     required String accessToken,
     required String refreshToken,
-  }) async {}
+  }) async {
+    access = accessToken;
+    refresh = refreshToken;
+  }
 }
 
-class _RetryingSmartHomeRepository implements SmartHomeRepository {
-  final LocalSmartHomeRepository _delegate = LocalSmartHomeRepository();
+class _RetryingSmartHomeRepo implements SmartHomeRepository {
   bool shouldFail = true;
-
-  void _throwWhenFailing() {
-    if (shouldFail) throw StateError('home unavailable');
-  }
-
-  @override
-  Future<List<SmartHomeDeviceDto>> listDevices({String? spaceId}) async {
-    _throwWhenFailing();
-    return _delegate.listDevices(spaceId: spaceId);
-  }
-
-  @override
-  Future<List<SmartSceneDto>> listScenes() async {
-    _throwWhenFailing();
-    return _delegate.listScenes();
+  void _throw() {
+    if (shouldFail) throw StateError('unavailable');
   }
 
   @override
   Future<List<SmartHomeSpaceDto>> listSpaces() async {
-    _throwWhenFailing();
-    return _delegate.listSpaces();
+    _throw();
+    return [
+      SmartHomeSpaceDto(
+        id: '1',
+        name: '客厅',
+        type: 'room',
+        summary: '25°C',
+        sortOrder: 0,
+      ),
+      SmartHomeSpaceDto(
+        id: '2',
+        name: '主卧',
+        type: 'room',
+        summary: '灯光开',
+        sortOrder: 1,
+      ),
+    ];
   }
 
   @override
-  Future<SmartSceneDto> runScene(String key) => _delegate.runScene(key);
+  Future<List<SmartHomeDeviceDto>> listDevices({String? spaceId}) async {
+    _throw();
+    return [];
+  }
+
+  @override
+  Future<List<SmartSceneDto>> listScenes() async {
+    _throw();
+    return [
+      SmartSceneDto(
+        key: 'sleep',
+        name: '睡眠',
+        description: '',
+        requiresConfirmation: true,
+      ),
+    ];
+  }
+
+  @override
+  Future<SmartSceneDto> runScene(String key) async => SmartSceneDto(
+    key: key,
+    name: key,
+    description: '',
+    requiresConfirmation: true,
+  );
 }

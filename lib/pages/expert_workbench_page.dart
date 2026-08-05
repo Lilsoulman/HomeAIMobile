@@ -143,9 +143,8 @@ class _ExpertWorkspacePageState extends State<ExpertWorkspacePage> {
   Future<List<AttachmentDto>> _loadAttachments() =>
       widget.attachmentRepository.listFiles();
 
-  void _reloadAttachments() => setState(
-    () => _attachments = widget.attachmentRepository.listFiles(),
-  );
+  void _reloadAttachments() =>
+      setState(() => _attachments = widget.attachmentRepository.listFiles());
 
   @override
   void dispose() {
@@ -164,9 +163,7 @@ class _ExpertWorkspacePageState extends State<ExpertWorkspacePage> {
     });
     try {
       final fileRefs = _selectedAttachmentIds
-          .map(
-            (id) => <String, dynamic>{'id': id, 'role': 'context'},
-          )
+          .map((id) => <String, dynamic>{'id': id, 'role': 'context'})
           .toList(growable: false);
       final input = <String, dynamic>{'request': request};
       if (fileRefs.isNotEmpty) input['fileRefs'] = fileRefs;
@@ -331,9 +328,11 @@ class _ExpertWorkspacePageState extends State<ExpertWorkspacePage> {
         ),
       );
       if (selected != null) {
-        setState(() => _selectedAttachmentIds
-          ..clear()
-          ..addAll(selected));
+        setState(
+          () => _selectedAttachmentIds
+            ..clear()
+            ..addAll(selected),
+        );
       }
     } on ApiException catch (error) {
       _showError(error.msg);
@@ -454,7 +453,6 @@ class _ExpertWorkspacePageState extends State<ExpertWorkspacePage> {
     },
   );
 }
-
 
 class _ExpertCard extends StatelessWidget {
   const _ExpertCard({required this.expert, required this.onTap});
@@ -909,10 +907,7 @@ class _AttachmentSurface extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(
-                '本次附件',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
+              Text('本次附件', style: Theme.of(context).textTheme.titleLarge),
               const Spacer(),
               if (selectedIds.isNotEmpty)
                 Text(
@@ -1094,10 +1089,7 @@ class _PickExistingSheetState extends State<_PickExistingSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              '选择已有附件',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text('选择已有附件', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 12),
             Flexible(
               child: ListView(

@@ -44,13 +44,13 @@ class TodoDto {
   });
 
   factory TodoDto.fromJson(Map<String, dynamic> json) => TodoDto(
-    id: (json['id'] as num).toInt(),
-    title: (json['title'] ?? '').toString(),
-    description: json['description'] as String?,
-    type: json['type'] as String?,
-    priority: json['priority'] as String?,
-    color: json['color'] as String?,
-    status: _parseStatus(json['status'] as String?),
+    id: (json['Id'] as num).toInt(),
+    title: (json['Title'] ?? '').toString(),
+    description: json['Description'] as String?,
+    type: json['Type'] as String?,
+    priority: json['Priority'] as String?,
+    color: json['Color'] as String?,
+    status: _parseStatus(json['Status'] as String?),
     dueAt: json['DueAt'] == null
         ? null
         : DateTime.parse(json['DueAt'] as String),
@@ -60,7 +60,7 @@ class TodoDto {
     completedAt: json['CompletedAt'] == null
         ? null
         : DateTime.parse(json['CompletedAt'] as String),
-    pinned: (json['pinned'] as bool?) ?? false,
+    pinned: (json['Pinned'] as bool?) ?? false,
     sortOrder: ((json['SortOrder'] as num?) ?? 0).toInt(),
     repeatRule: json['RepeatRule'] as String?,
     createdAt: DateTime.parse(json['CreatedAt'] as String),

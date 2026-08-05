@@ -97,8 +97,8 @@
 | F6-pre AgentRun 七态与设备行动一致性 | 完成 |
 | F6 SmartHome HTTP 接入 | 完成 |
 | F7 Todo HTTP 接入 | 完成 |
-| F8 Calendar HTTP 接入 | 待办 |
-| F9 单专家文件上下文 | 待办 |
+| F8 Calendar HTTP 接入 | 完成 |
+| F9 单专家文件上下文 | 进行中（功能已实现，Widget 测试验证待修复） |
 | F10 专家团多选启动 | 待办 |
 | F11 后端代理层联通 | 待办 |
 

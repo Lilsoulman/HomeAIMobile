@@ -33,12 +33,12 @@ class UserProfile {
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
-    id: (json['id'] as num).toInt(),
+    id: (json['Id'] as num).toInt(),
     displayName: (json['DisplayName'] ?? '').toString(),
     avatarUrl: json['AvatarUrl'] as String?,
-    status: (json['status'] ?? '').toString(),
-    timezone: (json['timezone'] ?? '').toString(),
-    locale: (json['locale'] ?? '').toString(),
+    status: (json['Status'] ?? '').toString(),
+    timezone: (json['Timezone'] ?? '').toString(),
+    locale: (json['Locale'] ?? '').toString(),
     createdAt: DateTime.parse(json['CreatedAt'] as String),
   );
 

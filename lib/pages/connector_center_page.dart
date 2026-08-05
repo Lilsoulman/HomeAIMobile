@@ -1,10 +1,11 @@
+// 连接中心，按 8.14 契约消费 HttpConnectorRepository。
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/api/api_exception.dart';
 import '../core/ui/nexus_theme.dart';
 import '../features/connector/connector_repository.dart';
-import '../features/connector/dto.dart';
 
 class ConnectorCenterPage extends StatefulWidget {
   const ConnectorCenterPage({super.key});
@@ -41,7 +42,7 @@ class _ConnectorCenterPageState extends State<ConnectorCenterPage> {
     ConnectorDto connector,
     Future<ConnectorDto> Function(ConnectorRepository repository) command,
   ) async {
-    setState(() => _workingKey = connector.id);
+    setState(() => _workingKey = connector.id.toString());
     try {
       await command(context.read<ConnectorRepository>());
       if (!mounted) return;
@@ -56,10 +57,10 @@ class _ConnectorCenterPageState extends State<ConnectorCenterPage> {
   }
 
   Future<void> _beginAuthorization(ConnectorProviderDto provider) async {
-    setState(() => _workingKey = provider.key);
+    setState(() => _workingKey = provider.code);
     try {
       await context.read<ConnectorRepository>().beginAuthorization(
-        provider.key,
+        provider.code,
       );
       if (!mounted) return;
       setState(_reload);
@@ -76,7 +77,7 @@ class _ConnectorCenterPageState extends State<ConnectorCenterPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text('断开“${connector.name}”'),
+        title: Text('断开"${connector.name}"'),
         content: const Text('断开后，NexusMind 将停止访问这项服务，直到你重新连接。'),
         actions: [
           TextButton(
@@ -93,7 +94,7 @@ class _ConnectorCenterPageState extends State<ConnectorCenterPage> {
     if (confirmed != true || !mounted) return;
     await _runConnectorCommand(
       connector,
-      (repository) => repository.disconnect(connector.id),
+      (repository) => repository.disconnect(connector.id.toString()),
     );
   }
 
@@ -127,13 +128,11 @@ class _ConnectorCenterPageState extends State<ConnectorCenterPage> {
             return const Center(child: CircularProgressIndicator());
           }
           final data = snapshot.data!;
-          final connectedProviderKeys = data.connectors
-              .map((connector) => connector.providerKey)
+          final connectedProviderCodes = data.connectors
+              .map((c) => c.providerCode)
               .toSet();
           final availableProviders = data.providers
-              .where(
-                (provider) => !connectedProviderKeys.contains(provider.key),
-              )
+              .where((p) => !connectedProviderCodes.contains(p.code))
               .toList();
           return RefreshIndicator(
             onRefresh: () async {
@@ -162,8 +161,8 @@ class _ConnectorCenterPageState extends State<ConnectorCenterPage> {
                       child: _ConnectorCard(
                         connector: connector,
                         busy:
-                            _workingKey == connector.id ||
-                            _workingKey == connector.providerKey,
+                            _workingKey == connector.id.toString() ||
+                            _workingKey == connector.providerCode,
                         onCommand: (command) =>
                             _runConnectorCommand(connector, command),
                         onDisconnect: () => _confirmDisconnect(connector),
@@ -234,6 +233,8 @@ class _ConnectorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = _statusPresentation(context, connector.status);
+    final lastSync = connector.lastSyncAt;
+    final lastHealth = connector.lastHealthAt;
     return NexusSurface(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,17 +259,16 @@ class _ConnectorCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Text(connector.description),
-          const SizedBox(height: 8),
-          Text(
-            connector.statusText,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            connector.permissionSummary,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
+          if (lastHealth != null)
+            Text(
+              '上次健康检查：${_formatTime(lastHealth)}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          if (lastSync != null)
+            Text(
+              '上次同步：${_formatTime(lastSync)}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           const SizedBox(height: 16),
           Wrap(
             spacing: 8,
@@ -298,17 +298,26 @@ class _ConnectorCard extends StatelessWidget {
 
   void _runPrimaryCommand(ConnectorDto connector) {
     switch (connector.status) {
-      case ConnectorConnectionStatus.online:
-        onCommand((repository) => repository.discover(connector.id));
+      case ConnectorConnectionStatus.connected:
+        onCommand((repository) => repository.discover(connector.id.toString()));
       case ConnectorConnectionStatus.authorizing:
       case ConnectorConnectionStatus.discovering:
       case ConnectorConnectionStatus.failed:
-        onCommand((repository) => repository.retry(connector.id));
+        onCommand((repository) => repository.retry(connector.id.toString()));
       case ConnectorConnectionStatus.disconnected:
         onCommand(
-          (repository) => repository.beginAuthorization(connector.providerKey),
+          (repository) => repository.beginAuthorization(connector.providerCode),
         );
     }
+  }
+
+  String _formatTime(DateTime dt) {
+    final local = dt.toLocal();
+    final h = local.hour.toString().padLeft(2, '0');
+    final m = local.minute.toString().padLeft(2, '0');
+    final M = local.month.toString().padLeft(2, '0');
+    final d = local.day.toString().padLeft(2, '0');
+    return '${local.year}-$M-$d $h:$m';
   }
 }
 
@@ -353,7 +362,7 @@ _ConnectorStatusPresentation _statusPresentation(
 ) {
   final scheme = Theme.of(context).colorScheme;
   return switch (status) {
-    ConnectorConnectionStatus.online => _ConnectorStatusPresentation(
+    ConnectorConnectionStatus.connected => _ConnectorStatusPresentation(
       label: '在线',
       icon: Icons.check_circle_outline,
       color: scheme.secondary,
@@ -382,7 +391,7 @@ _ConnectorStatusPresentation _statusPresentation(
 }
 
 String _primaryLabel(ConnectorConnectionStatus status) => switch (status) {
-  ConnectorConnectionStatus.online => '发现设备',
+  ConnectorConnectionStatus.connected => '发现设备',
   ConnectorConnectionStatus.authorizing => '完成授权',
   ConnectorConnectionStatus.discovering => '重新检查',
   ConnectorConnectionStatus.disconnected => '开始连接',
@@ -390,7 +399,7 @@ String _primaryLabel(ConnectorConnectionStatus status) => switch (status) {
 };
 
 IconData _primaryIcon(ConnectorConnectionStatus status) => switch (status) {
-  ConnectorConnectionStatus.online => Icons.radar_outlined,
+  ConnectorConnectionStatus.connected => Icons.radar_outlined,
   ConnectorConnectionStatus.authorizing => Icons.verified_user_outlined,
   ConnectorConnectionStatus.discovering => Icons.refresh_rounded,
   ConnectorConnectionStatus.disconnected => Icons.add_link_outlined,

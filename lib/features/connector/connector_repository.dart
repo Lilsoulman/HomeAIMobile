@@ -1,5 +1,7 @@
 import 'dto.dart';
 
+export 'dto.dart';
+
 abstract class ConnectorRepository {
   Future<List<ConnectorProviderDto>> listProviders();
 

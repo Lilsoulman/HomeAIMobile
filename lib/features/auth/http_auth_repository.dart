@@ -18,9 +18,8 @@ class HttpAuthRepository implements AuthRepository {
     String platform = 'android',
   }) async {
     final installationId = await Installation.getOrCreate();
-    final json = await _api.request<Map<String, dynamic>>(
-      method: 'POST',
-      path: '/auth/register',
+    final json = await _api.post<Map<String, dynamic>>(
+      '/auth/register',
       body: {
         'phone': phone,
         'password': password,
@@ -40,9 +39,8 @@ class HttpAuthRepository implements AuthRepository {
     String platform = 'android',
   }) async {
     final installationId = await Installation.getOrCreate();
-    final json = await _api.request<Map<String, dynamic>>(
-      method: 'POST',
-      path: '/auth/login',
+    final json = await _api.post<Map<String, dynamic>>(
+      '/auth/login',
       body: {
         'phone': phone,
         'password': password,
@@ -56,9 +54,8 @@ class HttpAuthRepository implements AuthRepository {
 
   @override
   Future<UserProfile> me() async {
-    final json = await _api.request<Map<String, dynamic>>(
-      method: 'GET',
-      path: '/auth/me',
+    final json = await _api.get<Map<String, dynamic>>(
+      '/auth/me',
       parseData: (raw) => (raw as Map).cast<String, dynamic>(),
     );
     return UserProfile.fromJson(json);
@@ -67,11 +64,7 @@ class HttpAuthRepository implements AuthRepository {
   @override
   Future<void> logout() async {
     try {
-      await _api.request<dynamic>(
-        method: 'POST',
-        path: '/auth/logout',
-        parseData: (_) => null,
-      );
+      await _api.post<dynamic>('/auth/logout', parseData: (_) => null);
     } catch (_) {
       // 登出失败也允许本地清空。
     }

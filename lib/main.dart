@@ -1,4 +1,3 @@
-// 执行模式 27：main.dart 改为真实 API 入口。
 // 启动顺序：EnvConfig → TokenStorage → ApiClient → AuthController → runApp。
 
 import 'package:flutter/material.dart';
@@ -11,40 +10,25 @@ import 'core/settings/app_settings.dart';
 import 'core/storage/token_storage.dart';
 import 'core/ui/nexus_theme.dart';
 import 'features/ai/ai_repository.dart';
-import 'features/ai/local_ai_repository.dart';
 import 'features/attachment/attachment_repository.dart';
 import 'features/attachment/http_attachment_repository.dart';
-import 'features/attachment/local_attachment_repository.dart';
 import 'features/auth/auth_controller.dart';
-import 'features/auth/auth_repository.dart';
 import 'features/auth/http_auth_repository.dart';
-import 'features/auth/local_auth_repository.dart';
 import 'features/calendar/calendar_repository.dart';
 import 'features/calendar/http_calendar_repository.dart';
-import 'features/calendar/local_calendar_repository.dart';
 import 'features/connector/connector_repository.dart';
-import 'features/connector/local_connector_repository.dart';
+import 'features/connector/http_connector_repository.dart';
 import 'features/expert/expert_run_repository.dart';
 import 'features/expert/http_expert_repository.dart';
 import 'features/expert/http_expert_run_repository.dart';
-import 'features/expert/local_expert_run_repository.dart';
 import 'experts/expert_repository.dart';
 import 'features/skill/http_skill_repository.dart';
-import 'features/skill/local_skill_repository.dart';
 import 'features/skill/skill_repository.dart';
 import 'features/smart_home/http_smart_home_repository.dart';
-import 'features/smart_home/local_smart_home_repository.dart';
 import 'features/smart_home/smart_home_repository.dart';
 import 'features/todo/http_todo_repository.dart';
-import 'features/todo/local_todo_repository.dart';
 import 'features/todo/todo_repository.dart';
-import 'experts/mock_expert_repository.dart';
 import 'router.dart';
-
-const bool useLocalData = bool.fromEnvironment(
-  'USE_LOCAL_DATA',
-  defaultValue: true,
-);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,13 +36,10 @@ Future<void> main() async {
   final tokenStorage = await createTokenStorage();
   final settings = await AppSettings.load();
   final api = ApiClient(tokenStorage: tokenStorage, env: env);
-  final AuthRepository authRepo = useLocalData
-      ? LocalAuthRepository()
-      : HttpAuthRepository(api);
   final auth = AuthController(
     apiClient: api,
     tokenStorage: tokenStorage,
-    repository: authRepo,
+    repository: HttpAuthRepository(api),
   );
   await auth.bootstrap();
 
@@ -91,31 +72,15 @@ class NexusMindApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final TodoRepository todoRepo = useLocalData
-        ? LocalTodoRepository()
-        : HttpTodoRepository(api);
-    final CalendarRepository calendarRepo = useLocalData
-        ? LocalCalendarRepository()
-        : HttpCalendarRepository(api);
-    final ExpertRepository expertRepo = useLocalData
-        ? MockExpertRepository()
-        : HttpExpertRepository(api);
-    final ExpertRunRepository expertRunRepo = useLocalData
-        ? LocalExpertRunRepository()
-        : HttpExpertRunRepository(api);
-    final SkillRepository skillRepo = useLocalData
-        ? LocalSkillRepository()
-        : HttpSkillRepository(api);
-    final AiRepository aiRepo = useLocalData
-        ? LocalAiRepository()
-        : HttpAiRepository(api);
-    final SmartHomeRepository smartHomeRepo = useLocalData
-        ? LocalSmartHomeRepository()
-        : HttpSmartHomeRepository(api);
-    final ConnectorRepository connectorRepo = LocalConnectorRepository();
-    final AttachmentRepository attachmentRepo = useLocalData
-        ? LocalAttachmentRepository()
-        : HttpAttachmentRepository(api);
+    final todoRepo = HttpTodoRepository(api);
+    final calendarRepo = HttpCalendarRepository(api);
+    final expertRepo = HttpExpertRepository(api);
+    final expertRunRepo = HttpExpertRunRepository(api);
+    final skillRepo = HttpSkillRepository(api);
+    final aiRepo = HttpAiRepository(api);
+    final smartHomeRepo = HttpSmartHomeRepository(api);
+    final connectorRepo = HttpConnectorRepository(api);
+    final attachmentRepo = HttpAttachmentRepository(api);
 
     return MultiProvider(
       providers: [
@@ -265,79 +230,6 @@ class _FloatingBottomBar extends StatelessWidget {
             );
           }),
         ),
-      ),
-    );
-  }
-}
-
-class _BottomBar extends StatelessWidget {
-  const _BottomBar({required this.index, required this.onSelect});
-  final int index;
-  final ValueChanged<int> onSelect;
-  static const items = [
-    (Icons.home_rounded, '首页'),
-    (Icons.auto_awesome_outlined, 'AI'),
-    (Icons.calendar_today_outlined, '计划'),
-    (Icons.home_work_outlined, '家庭'),
-    (Icons.person_rounded, '我的'),
-  ];
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final pillBg = isDark ? NexusPalette.homeAccent : NexusPalette.homeAccent;
-    final pillFg = Colors.white;
-    final idleColor = isDark
-        ? const Color(0xffa4a2ad)
-        : const Color(0xff6e6e73);
-    return Container(
-      margin: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(NexusLayout.contentRadius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 20,
-            offset: Offset(0, 7),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(items.length, (i) {
-          final selected = i == index;
-          final item = items[i];
-          return InkWell(
-            onTap: () => onSelect(i),
-            borderRadius: BorderRadius.circular(20),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              width: 60,
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              decoration: BoxDecoration(
-                color: selected ? pillBg : Colors.transparent,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(item.$1, size: 21, color: selected ? pillFg : idleColor),
-                  const SizedBox(height: 3),
-                  Text(
-                    item.$2,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: selected ? pillFg : idleColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }),
       ),
     );
   }

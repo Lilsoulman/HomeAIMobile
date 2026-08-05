@@ -74,7 +74,8 @@ GoRouter buildAppRouter({
                       return ExpertWorkspacePage(
                         repository: context.read<ExpertRepository>(),
                         runRepository: context.read<ExpertRunRepository>(),
-                        attachmentRepository: context.read<AttachmentRepository>(),
+                        attachmentRepository: context
+                            .read<AttachmentRepository>(),
                         expertId: state.pathParameters['expertId']!,
                         sourceType: sourceType,
                       );

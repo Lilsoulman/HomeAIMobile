@@ -9,7 +9,7 @@ flutter pub get
 flutter run
 ```
 
-Web 版本：`flutter run -d chrome`
+浏览器调试：`flutter run -d chrome`。使用 VS Code 启动后，保存 Dart 文件会自动热重载；命令行启动时在终端按 `r` 热重载，按 `R` 热重启。上述能力仅适用于 Debug 模式。
 
 ## 验证
 
@@ -19,7 +19,7 @@ flutter test
 flutter build web
 ```
 
-入口代码位于 `lib/main.dart`，平台工程位于 `android/`、`ios/`、`web/` 和 `windows/`。待办及日程目前使用内存 mock 数据，后续可替换为 HTTP 或本地持久化仓库。
+入口代码位于 `lib/main.dart`，平台工程位于 `android/`、`ios/`、`web/` 和 `windows/`。待办、日程、智能家居与专家文件默认使用本地仓库；以 `--dart-define=USE_LOCAL_DATA=false` 运行时，已接入的 Todo、Calendar、SmartHome 与专家文件能力会切换到对应的 HTTP 仓库。
 ## API integration
 
 The mobile client follows the backend contract in
@@ -34,10 +34,30 @@ The mobile client follows the backend contract in
   refresh is serialized and the original request is retried once after 401.
 - A stable installation id is generated and sent on register/login.
 
-Override the API host at build or run time:
+## Environment configuration
+
+Edit `env/.env`, then launch normally:
+
+```bash
+flutter run
+```
+
+The tracked development default enables HTTP repositories:
+
+```dotenv
+USE_LOCAL_DATA=false
+API_BASE_URL=http://localhost:5280
+```
+
+This file is bundled with the application, so it must never contain tokens,
+passwords, keys, or other secrets. On an Android device, `localhost` points to
+the device itself. Use the backend computer's LAN IP instead; Android emulators
+normally use `10.0.2.2`.
+
+CI and temporary debugging can still override `env/.env` with `dart-define`:
 
 ```powershell
-flutter run --dart-define=API_BASE_URL=http://192.168.1.10:5280
+flutter run --dart-define=API_BASE_URL=http://192.168.1.10:5280 --dart-define=USE_LOCAL_DATA=false
 ```
 
 The login page's developer settings also allow changing the base URL. Changing

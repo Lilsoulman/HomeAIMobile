@@ -1,77 +1,68 @@
-# NexusMind UI Style Guide
+# NexusMind UI 风格指南
 
-## Purpose
+## 目的
 
-NexusMind uses functional, AI-readable interfaces. Every color, container and
-spacing choice must communicate hierarchy, state or an available action. Do not
-add decorative gradients, floating ornaments or imagery that does not support a
-task.
+NexusMind 使用功能导向、便于 AI 理解的界面。每一项颜色、容器和间距选择都必须
+传达层级、状态或可执行操作。不得添加装饰性渐变、悬浮装饰，或与任务无关的图像。
 
-## Design Tokens
+## 设计令牌
 
-| Token | Value | Use |
+| 令牌 | 值 | 用途 |
 | --- | --- | --- |
-| Electric Blue | `#4DA3FF` | Primary actions, selected states and active controls |
-| Mint Accent | `#3DD6A0` | Healthy system state and confirmed completion |
-| Fact Text | `#1A1A1A` | Primary text in light mode |
-| Dark Background | `#1C1C1E` | Default app background |
-| Dark Content Surface | `#2C2C2E` | Cards, sheets and form fields in dark mode |
-| Dark Primary Text | `#FFFFFF` | Titles and key values |
-| Dark Body Text | `#A1A1AA` | Descriptions and controls |
-| Dark Metadata | `#71717A` | Timestamps and secondary information |
-| Page padding | `20px` horizontal, `24px` vertical | Default scrollable page inset |
-| Surface radius | `20px` | Independent information or status surfaces |
-| Control radius | `16px` | Buttons, chips and inputs |
-| Major section gap | `24px` | Between page anchor, control groups and information sections |
-| Related control gap | `12px` | Between controls and repeated information surfaces |
-| Bottom content inset | `100px` | Scrollable tab content above the floating navigation |
-| Surface shadow | black 12%, blur `18px`, y `8px` | Subtle dark-mode elevation |
+| 电光蓝 | `#4DA3FF` | 主操作、选中状态和活动控件 |
+| 薄荷绿强调色 | `#3DD6A0` | 系统健康状态和已确认完成状态 |
+| 正文文本 | `#1A1A1A` | 浅色模式的主要文本 |
+| 深色背景 | `#1C1C1E` | 应用默认背景 |
+| 深色内容表面 | `#2C2C2E` | 深色模式下的卡片、底部弹层和表单字段 |
+| 深色主要文本 | `#FFFFFF` | 标题和关键数值 |
+| 深色正文文本 | `#A1A1AA` | 描述和控件文本 |
+| 深色元数据 | `#71717A` | 时间戳和次要信息 |
+| 页面内边距 | 水平 `20px`，垂直 `24px` | 可滚动页面的默认内边距 |
+| 表面圆角 | `20px` | 独立的信息或状态表面 |
+| 控件圆角 | `16px` | 按钮、标签和输入框 |
+| 主区块间距 | `24px` | 页面锚点、控件组和信息区块之间 |
+| 关联控件间距 | `12px` | 控件之间及重复信息表面之间 |
+| 底部内容内边距 | `100px` | 悬浮导航上方的可滚动 Tab 内容 |
+| 表面阴影 | 黑色 12%，模糊 `18px`，Y 轴 `8px` | 轻微的深色模式层级提升 |
 
-The Flutter source of truth is `lib/core/ui/nexus_theme.dart`. Screens consume
-`Theme.of(context)` and `NexusLayout`; they must not duplicate token values.
+Flutter 的唯一事实来源为 `lib/core/ui/nexus_theme.dart`。页面使用
+`Theme.of(context)` 和 `NexusLayout`，不得重复定义令牌值。
 
-## Typography
+## 排版
 
-Use four levels only: 28 for the page anchor, 18 for section titles, 15 for
-body and controls, and 13 for metadata. Use regular tracking. Headings use
-weight 700, section labels 600, and body text 400-500. Workspace pages use
-`NexusPageHeader` for the 28px page anchor and contextual description; detail
-pages retain the shared Material app bar only for back navigation.
+仅使用四个字号层级：页面锚点为 28，区块标题为 18，正文和控件为 15，元数据为
+13。使用常规字间距。标题使用 700 字重，区块标签使用 600 字重，正文使用
+400-500 字重。工作区页面使用 `NexusPageHeader` 呈现 28px 页面锚点和上下文
+描述；详情页仅保留共享的 Material 应用栏用于返回导航。
 
-## Layout and Hierarchy
+## 布局与层级
 
-- Use the F-pattern: context first, then status, then the primary action.
-- Keep a 24px gap between major sections and 12px between related controls.
-- A home page begins with a context anchor, then one 56px primary AI action.
-- Status summaries use an evenly divided row or grid. Each item exposes a
-  short label and a single prominent value.
-- A page has one primary action. AI actions use AI Accent; confirmed status
-  uses Brand Green. Do not use semantic colors as decoration.
-- Prefer outlined Material icons with clear tooltips for icon-only controls.
+- 使用 F 型阅读路径：先呈现上下文，再呈现状态，最后呈现主操作。
+- 主区块之间保持 24px 间距，关联控件之间保持 12px 间距。
+- 首页从上下文锚点开始，随后提供一个高度为 56px 的主 AI 操作。
+- 状态摘要使用均分的行或网格。每个项目包含简短标签和一个突出的数值。
+- 每页只保留一个主操作。AI 操作使用 AI 强调色；确认状态使用品牌绿色。不得将
+  语义色作为装饰。
+- 图标按钮优先使用带清晰工具提示的描边 Material 图标。
 
-## Components and States
+## 组件与状态
 
-- `NexusSurface` is the default framed information block. Do not put surfaces
-  inside other surfaces unless the inner element is an independently actionable
-  repeated item.
-- Each workspace starts with its page anchor, then one focused control surface
-  when filtering or creation is needed, then repeated `NexusSurface` items.
-  AI expert cards use a primary-container icon tile; todo cards use a checkbox,
-  title and compact metadata row. Do not introduce a second card radius,
-  padding scale or standalone grey background for these flows.
-- Use electric-blue `FilledButton` controls for decisive commands and soft
-  dark outlined secondary controls for quick actions. Primary commands are at
-  least 52px high; active controls may use a restrained blue glow.
-- Smart-home room cards prioritise a rounded room image with a bottom black
-  gradient so white labels remain readable. Always supply a visual fallback
-  when a remote image cannot load.
-- Every async surface shows loading, empty and error states. Repository calls
-  start in `initState` or a user action, never in `build`.
-- Maintain light and dark themes through the shared theme. Do not hard-code
-  white, black or arbitrary greys in feature pages.
+- `NexusSurface` 是默认的带边界信息块。除非内部元素是可独立操作的重复项目，
+  否则不得在一个表面中嵌套另一个表面。
+- 每个工作区先展示页面锚点；需要筛选或创建时，再展示一个聚焦的控件表面；随后
+  呈现重复的 `NexusSurface` 项目。AI 专家卡片使用主容器色图标块；待办卡片使用
+  复选框、标题和紧凑的元数据行。不得为这些流程新增第二套卡片圆角、内边距尺度或
+  独立的灰色背景。
+- 决断性命令使用电光蓝 `FilledButton` 控件，快捷操作使用柔和的深色描边次级控件。
+  主命令高度至少为 52px；活动控件可使用克制的蓝色光晕。
+- 智能家居房间卡片优先使用圆角房间图片，并在底部叠加黑色渐变以保证白色标签的
+  可读性。远程图片无法加载时必须提供视觉回退。
+- 每个异步表面均须展示加载、空和错误状态。Repository 调用应在 `initState` 或
+  用户操作中发起，绝不可在 `build` 中发起。
+- 通过共享主题维护浅色和深色主题。功能页面不得硬编码白色、黑色或任意灰色。
 
-## Responsive Rules
+## 响应式规则
 
-Support 320px through 430px widths without fixed content widths. Use
-`Expanded`, `Wrap`, scrolling quick-action rows and `SafeArea`. Labels may wrap
-but must not overlap, truncate essential state, or resize their parent controls.
+支持 320px 至 430px 宽度，不得使用固定内容宽度。使用 `Expanded`、`Wrap`、
+可滚动的快捷操作行和 `SafeArea`。标签可以换行，但不得重叠、截断关键信息，或
+改变其父控件的尺寸。

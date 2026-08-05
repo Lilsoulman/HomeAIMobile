@@ -40,7 +40,8 @@ class HttpAttachmentRepository implements AttachmentRepository {
     );
     return _asList(raw)
         .map(
-          (item) => AttachmentDto.fromJson((item as Map).cast<String, dynamic>()),
+          (item) =>
+              AttachmentDto.fromJson((item as Map).cast<String, dynamic>()),
         )
         .toList();
   }
@@ -56,9 +57,7 @@ class HttpAttachmentRepository implements AttachmentRepository {
       'file': MultipartFile.fromBytes(
         bytes,
         filename: filename,
-        contentType: mimeType == null
-            ? null
-            : DioMediaType.parse(mimeType!),
+        contentType: mimeType == null ? null : DioMediaType.parse(mimeType),
       ),
       if (role != null) 'role': role,
     });

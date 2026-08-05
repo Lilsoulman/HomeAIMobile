@@ -17,10 +17,12 @@ import 'api_envelope.dart';
 import 'api_exception.dart';
 
 typedef OnSessionExpired = Future<void> Function();
+typedef ApiDataParser<T> = T Function(dynamic raw);
 
 class ApiClient {
-  ApiClient({required this.tokenStorage, required this.env})
-    : _dio = Dio(
+  ApiClient({required this.tokenStorage, required EnvConfig env})
+    : env = env,
+      _dio = Dio(
         BaseOptions(
           baseUrl: env.apiPrefix,
           connectTimeout: const Duration(seconds: 10),
@@ -33,8 +35,22 @@ class ApiClient {
     env.addListener(_updateBaseUrl);
   }
 
+  ApiClient.forBaseUrl({required this.tokenStorage, required String baseUrl})
+    : env = null,
+      _dio = Dio(
+        BaseOptions(
+          baseUrl: _apiPrefix(baseUrl),
+          connectTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 30),
+          contentType: 'application/json; charset=utf-8',
+          responseType: ResponseType.json,
+        ),
+      ) {
+    _dio.interceptors.add(_AuthInterceptor(this));
+  }
+
   final TokenStorage tokenStorage;
-  final EnvConfig env;
+  final EnvConfig? env;
   final Dio _dio;
   Completer<bool>? _refreshing;
 
@@ -42,7 +58,7 @@ class ApiClient {
   String? _cachedAccessToken;
 
   Dio get dio => _dio;
-  String get baseUrl => env.baseUrl;
+  String get baseUrl => env?.baseUrl ?? _dio.options.baseUrl;
 
   /// 每次切换登录态（登录/登出/切地址/refresh）后必须重新注入，避免持有过期 token。
   void setAccessToken(String? token) {
@@ -52,7 +68,8 @@ class ApiClient {
   String? get accessToken => _cachedAccessToken;
 
   void _updateBaseUrl() {
-    _dio.options.baseUrl = env.apiPrefix;
+    final config = env;
+    if (config != null) _dio.options.baseUrl = config.apiPrefix;
   }
 
   void setOnSessionExpired(OnSessionExpired callback) {
@@ -65,7 +82,7 @@ class ApiClient {
     required String path,
     Object? body,
     Map<String, dynamic>? query,
-    required T Function(dynamic raw) parseData,
+    ApiDataParser<T>? parseData,
   }) async {
     try {
       final response = await _dio.request<dynamic>(
@@ -74,10 +91,83 @@ class ApiClient {
         queryParameters: query,
         options: Options(method: method),
       );
-      return _decode(response, parseData);
+      return _decode(response, parseData ?? _defaultParser<T>());
     } on DioException catch (e) {
       throw _mapDioError(e);
     }
+  }
+
+  Future<T> get<T>(
+    String path, {
+    Map<String, dynamic>? query,
+    ApiDataParser<T>? parseData,
+  }) {
+    return request(
+      method: 'GET',
+      path: path,
+      query: query,
+      parseData: parseData,
+    );
+  }
+
+  Future<T> post<T>(
+    String path, {
+    Object? body,
+    Map<String, dynamic>? query,
+    ApiDataParser<T>? parseData,
+  }) {
+    return request(
+      method: 'POST',
+      path: path,
+      body: body,
+      query: query,
+      parseData: parseData,
+    );
+  }
+
+  Future<T> put<T>(
+    String path, {
+    Object? body,
+    Map<String, dynamic>? query,
+    ApiDataParser<T>? parseData,
+  }) {
+    return request(
+      method: 'PUT',
+      path: path,
+      body: body,
+      query: query,
+      parseData: parseData,
+    );
+  }
+
+  Future<T> delete<T>(
+    String path, {
+    Object? body,
+    Map<String, dynamic>? query,
+    ApiDataParser<T>? parseData,
+  }) {
+    return request(
+      method: 'DELETE',
+      path: path,
+      body: body,
+      query: query,
+      parseData: parseData,
+    );
+  }
+
+  Future<T> patch<T>(
+    String path, {
+    Object? body,
+    Map<String, dynamic>? query,
+    ApiDataParser<T>? parseData,
+  }) {
+    return request(
+      method: 'PATCH',
+      path: path,
+      body: body,
+      query: query,
+      parseData: parseData,
+    );
   }
 
   /// multipart 上传专用：自动设置 Content-Type 为 multipart/form-data。
@@ -85,7 +175,7 @@ class ApiClient {
     required String path,
     required FormData formData,
     Map<String, dynamic>? query,
-    required T Function(dynamic raw) parseData,
+    ApiDataParser<T>? parseData,
   }) async {
     try {
       final response = await _dio.post<dynamic>(
@@ -93,7 +183,7 @@ class ApiClient {
         data: formData,
         queryParameters: query,
       );
-      return _decode(response, parseData);
+      return _decode(response, parseData ?? _defaultParser<T>());
     } on DioException catch (e) {
       throw _mapDioError(e);
     }
@@ -150,7 +240,7 @@ class ApiClient {
     }
   }
 
-  T _decode<T>(Response<dynamic> response, T Function(dynamic raw) parseData) {
+  T _decode<T>(Response<dynamic> response, ApiDataParser<T> parseData) {
     final raw = response.data;
     if (raw is! Map<String, dynamic>) {
       throw ApiException(-1, '响应不是合法 JSON 对象');
@@ -166,6 +256,15 @@ class ApiClient {
     return data;
   }
 
+  ApiDataParser<T> _defaultParser<T>() {
+    return (raw) {
+      if (T == Map<String, dynamic>) {
+        return _asJsonObject(raw) as T;
+      }
+      return raw as T;
+    };
+  }
+
   Never _mapDioError(DioException e) {
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout ||
@@ -175,21 +274,25 @@ class ApiClient {
     }
     if (e.response != null) {
       final status = e.response!.statusCode ?? 0;
-      final body = e.response!.data;
-      if (body is Map<String, dynamic>) {
+      final body = _tryJsonObject(e.response!.data);
+      if (body != null) {
         final code = (body['Code'] as num?)?.toInt() ?? status;
-        final msg = (body['Msg'] ?? '').toString();
-        if (code == 401 || status == 401) {
-          throw UnauthorizedException();
-        }
+        final msg = (body['Msg'] ?? '').toString().trim();
         throw ApiException(code, msg.isEmpty ? '请求失败' : msg);
       }
     }
     throw NetworkException(e.message ?? '请求失败');
   }
 
+  Map<String, dynamic>? _tryJsonObject(dynamic raw) {
+    if (raw is Map<String, dynamic>) return raw;
+    if (raw is Map) return raw.cast<String, dynamic>();
+    return null;
+  }
+
   Map<String, dynamic> _asJsonObject(dynamic raw) {
     if (raw is Map<String, dynamic>) return raw;
+    if (raw is Map) return raw.cast<String, dynamic>();
     if (raw == null) return const {};
     throw ApiException(-1, '响应不是 JSON 对象');
   }
@@ -197,6 +300,11 @@ class ApiClient {
   Future<void> notifySessionExpired() async {
     final cb = _onSessionExpired;
     if (cb != null) await cb();
+  }
+
+  static String _apiPrefix(String baseUrl) {
+    final trimmed = baseUrl.trim().replaceFirst(RegExp(r'/+$'), '');
+    return trimmed.endsWith('/api/v1') ? trimmed : '$trimmed/api/v1';
   }
 }
 
@@ -239,7 +347,8 @@ class _AuthInterceptor extends Interceptor {
     }
     final path = err.requestOptions.path;
     if (_authFree.contains(path) ||
-        err.requestOptions.extra['__skipAuth'] == true) {
+        err.requestOptions.extra['__skipAuth'] == true ||
+        err.requestOptions.extra['__retried'] == true) {
       return handler.next(err);
     }
     final refreshed = await _client.refreshAccessToken();
@@ -256,6 +365,7 @@ class _AuthInterceptor extends Interceptor {
         },
         contentType: err.requestOptions.contentType,
         responseType: err.requestOptions.responseType,
+        extra: {...err.requestOptions.extra, '__retried': true},
       );
       final retried = await _client.dio.request<dynamic>(
         err.requestOptions.path,

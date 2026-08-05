@@ -4,7 +4,6 @@ import 'package:nexus_mind_mobile/core/api/api_client.dart';
 import 'package:nexus_mind_mobile/core/api/api_exception.dart';
 import 'package:nexus_mind_mobile/core/env/env_config.dart';
 import 'package:nexus_mind_mobile/core/storage/token_storage.dart';
-import 'package:nexus_mind_mobile/features/calendar/dto.dart';
 import 'package:nexus_mind_mobile/features/calendar/http_calendar_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -17,15 +16,11 @@ void main() {
       () async {
         final requests = <RequestOptions>[];
         final repository = await _repository(requests, [
-          [
-            _eventJson(),
-          ],
+          [_eventJson()],
           _eventJson(),
           _eventJson(),
           null,
-          [
-            _subscriptionJson(),
-          ],
+          [_subscriptionJson()],
           _subscriptionJson(),
           _subscriptionJson(),
           null,
@@ -46,10 +41,11 @@ void main() {
           opacity: 0.8,
           repeatRule: 'weekly',
         );
-        await repository.updateEvent(
-          1,
-          {'title': '深度复盘', 'color': '#3DD6A0', 'allDay': true},
-        );
+        await repository.updateEvent(1, {
+          'title': '深度复盘',
+          'color': '#3DD6A0',
+          'allDay': true,
+        });
         await repository.deleteEvent(1);
 
         final subscriptions = await repository.listSubscriptions();
@@ -59,10 +55,10 @@ void main() {
           enabled: true,
           refreshIntervalMin: 30,
         );
-        await repository.updateSubscription(
-          1,
-          {'enabled': false, 'name': '备用'},
-        );
+        await repository.updateSubscription(1, {
+          'enabled': false,
+          'name': '备用',
+        });
         await repository.deleteSubscription(1);
 
         expect(events, hasLength(1));
@@ -94,16 +90,23 @@ void main() {
       },
     );
 
-    test('propagates an API failure without converting it to empty data', () async {
-      final repository = await _repository(<RequestOptions>[], const [], code: 422);
+    test(
+      'propagates an API failure without converting it to empty data',
+      () async {
+        final repository = await _repository(
+          <RequestOptions>[],
+          const [],
+          code: 422,
+        );
 
-      await expectLater(
-        repository.listEvents(),
-        throwsA(
-          isA<ApiException>().having((error) => error.msg, 'msg', '无效日程'),
-        ),
-      );
-    });
+        await expectLater(
+          repository.listEvents(),
+          throwsA(
+            isA<ApiException>().having((error) => error.msg, 'msg', '无效日程'),
+          ),
+        );
+      },
+    );
   });
 }
 

@@ -34,29 +34,32 @@ void main() {
       ]);
     });
 
-    test('uploadFile uses FormData with MultipartFile and parses response', () async {
-      final requests = <RequestOptions>[];
-      final repository = await _repository(requests, [
-        _fileJson(id: 9, name: 'uploaded.txt'),
-      ]);
+    test(
+      'uploadFile uses FormData with MultipartFile and parses response',
+      () async {
+        final requests = <RequestOptions>[];
+        final repository = await _repository(requests, [
+          _fileJson(id: 9, name: 'uploaded.txt'),
+        ]);
 
-      final bytes = Uint8List.fromList('abc'.codeUnits);
-      final uploaded = await repository.uploadFile(
-        filename: 'uploaded.txt',
-        bytes: bytes,
-        mimeType: 'text/plain',
-        role: 'context',
-      );
+        final bytes = Uint8List.fromList('abc'.codeUnits);
+        final uploaded = await repository.uploadFile(
+          filename: 'uploaded.txt',
+          bytes: bytes,
+          mimeType: 'text/plain',
+          role: 'context',
+        );
 
-      expect(uploaded.id, 9);
-      expect(uploaded.filename, 'uploaded.txt');
-      expect(requests, hasLength(1));
-      expect(requests.single.path, '/expert-files');
-      final form = requests.single.data as FormData;
-      expect(form.files, hasLength(1));
-      expect(form.files.single.key, 'file');
-      expect(form.files.single.value.filename, 'uploaded.txt');
-    });
+        expect(uploaded.id, 9);
+        expect(uploaded.filename, 'uploaded.txt');
+        expect(requests, hasLength(1));
+        expect(requests.single.path, '/expert-files');
+        final form = requests.single.data as FormData;
+        expect(form.files, hasLength(1));
+        expect(form.files.single.key, 'file');
+        expect(form.files.single.value.filename, 'uploaded.txt');
+      },
+    );
 
     test('propagates a 422 API failure', () async {
       final repository = await _repository(
