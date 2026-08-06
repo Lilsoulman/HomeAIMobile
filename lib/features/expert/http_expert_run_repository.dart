@@ -41,6 +41,24 @@ class HttpExpertRunRepository implements ExpertRunRepository {
       .then(ExpertRunDto.fromJson);
 
   @override
+  Future<List<ExpertRunDto>> listRuns({int? expertId, int limit = 10}) async {
+    final raw = await _api.request<dynamic>(
+      method: 'GET',
+      path: '/expert-runs',
+      query: {
+        if (expertId != null) 'expertId': expertId,
+        'limit': limit,
+      },
+      parseData: (value) => value,
+    );
+    if (raw is! List) return const [];
+    return raw
+        .whereType<Map>()
+        .map((item) => ExpertRunDto.fromJson(item.cast<String, dynamic>()))
+        .toList();
+  }
+
+  @override
   Future<List<ExpertRunEventDto>> listEvents(int runId) async {
     final raw = await _api.request<dynamic>(
       method: 'GET',

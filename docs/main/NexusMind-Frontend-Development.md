@@ -21,6 +21,8 @@
 
 所有外部服务均经自有 `/api/v1` 后端访问。客户端不得持有或记录第三方 Key、Token、凭据或 Endpoint，也不得直连 AI、Home Assistant、天气、日历或其他供应商。
 
+创作者中心本地 MCP Bridge（`HomeMind.CreatorMcp`）只服务受控本机的 Codex/Agent：它的 stdio transport、本地 SQLite 缓存、同步令牌和 `NEXUSMIND_MCP_ALLOW_SENSITIVE` 开关均不属于移动端。Flutter 不配置、不调用、不展示该 Bridge，也不读取其 SQLite；创作者中心相关的 App 数据如未来需要呈现，仍必须由已发布、自有 `/api/v1` 契约提供，并沿用当前 DTO、权限和脱敏规则。
+
 ## 2. 体验与设计系统
 
 NexusMind 是“AI 与你一起管理家庭”的管家工作台，不是设备控制面板或通用聊天窗口。页面始终让用户理解：**发生了什么、依据是什么、影响谁和什么、是否需要确认、结果如何追溯**。页面优先级为“上下文 → 状态 → 一个主行动”。
@@ -48,11 +50,12 @@ NexusMind 是“AI 与你一起管理家庭”的管家工作台，不是设备�
 所有路由仅在 `lib/router.dart` 声明。切换 Tab 使用 `go`；详情、新建、编辑、确认、拒绝和撤销流程使用 `push`。目标页面包括：
 
 - `dashboard_page.dart`：管家工作台；
-- `expert_workbench_page.dart`：能力中心，既有 Run 历史作为动态详情来源；
+- `expert_workbench_page.dart`：能力中心，既有 Run 历史作为动态详情来源；V2.3 起专家目录按 `planning`/`review`/`life` 分类组织，`life` 分类含个人生活专家详情；
 - `plan_page.dart`：待确认、任务、日历；
 - `home_plus_page.dart`：家庭空间与设备健康；
 - `settings_page.dart`：家庭成员、知识、偏好和 Connector；
-- `confirmation_center_page.dart`、`family_members_page.dart`、`family_knowledge_page.dart`、`steward_timeline_page.dart`：可返回的二级页面。
+- `confirmation_center_page.dart`、`family_members_page.dart`、`family_knowledge_page.dart`、`steward_timeline_page.dart`：可返回的二级页面；
+- `favorites_page.dart`（个人偏好收藏管理）、`life_recommend_page.dart`（探店翻牌）、`life_trip_page.dart`（行程规划与日历同步确认）：V2.3 个人生活专家二级页面。
 
 ## 4. 页面与交互要求
 
@@ -92,9 +95,21 @@ NexusMind 是“AI 与你一起管理家庭”的管家工作台，不是设备�
 
 家庭知识默认由 `active` 成员写入；`security` 分类仅允许家庭管理员写入。AI 提取的知识必须标识系统来源和待确认置信度，前端展示冲突和解决结果而不静默覆盖。所有写入、无权限、空、错误和重试状态均需可见。
 
+### 个人生活专家（V2.3）
+
+`life` 分类（个人生活专家）不新增底部导航 Tab，五 Tab 信息架构保持不变。能力中心该分类下展示专家详情（翻牌与行程两个子能力，均可解释、可追溯）：
+
+- **探店翻牌**（`life_recommend_page.dart`）：输入时间（可选时段）、位置（可选）、口味（可选）后发起 `intent=recommend` 运行；结果以建议卡展示 Top1-2 店铺（名称、理由、命中标签）。翻牌为只读 L1，不产生确认动作；无匹配时展示"来自私藏店铺库"的兜底建议。
+- **行程规划**（`life_trip_page.dart`）：输入目的地（必填）与天数（1-7）后发起 `intent=plan` 运行；结果按天展示每日安排（上午/下午/晚上、天气、引用收藏与理由），并呈现 1 个 `calendar_create_event` 动作（L1）。确认前必须展示影响范围（N 天 → N 个日历事件）与确认要求；确认提交使用新的幂等键，提交中禁用按钮，重复请求展示既有结果；确认后跳转/提示日历已同步。
+- **收藏管理**（`favorites_page.dart`）：`restaurant`/`travel`/`material` 分类的列表、新建、编辑、软删除与对话导入。`private` 收藏仅归属成员本人可见，不得展示给家庭其他成员；破坏性删除必须二次确认。写操作权限不足时展示无权限状态。
+
+所有页面只消费 `FavoriteDto`、`LifeExpertRun` 建议/动作 DTO，不渲染提示、思考链、凭据或供应商字段。
+
 ### Connector 与通知
 
 Connector 位于“设置 → 连接管理”。只展示健康、授权、发现、成员权限和 Tool 可用性，不展示凭据。`status` 与 `authStatus` 分别表达健康和授权生命周期，不能混用。
+
+V2.4 将 Connector 分为 `household` 与 `personal`：家庭级实例由 owner/admin 在 Web 开发端配置，移动端仅显示已授权状态；个人级实例仅显示给绑定成员，并允许该成员发起授权、查看脱敏状态和撤销。个人 OAuth 的 callback、Token 和刷新不进入 Flutter。接口发布前，不实现猜测性的个人连接 HTTP Repository；现有 `tenant_members` 固定角色为 owner/admin/member/viewer，移动端按服务端权限显示页面和操作，不维护角色或路由。
 
 通知只用于需要知情、确认或处置的事项。客户端按服务端聚合结果展示并支持静默/退订偏好：L3 独立、立即送达；L2 独立送达但可受成员静默偏好延迟；L1、场景和周期摘要可聚合。通知打开后必须落到已授权家庭中的对应确认项或动态，不能暴露跨家庭信息。
 
@@ -122,8 +137,12 @@ Page / Widget
 | Expert / AgentRun | 专家目录、托管状态、运行、事件、Action、取消与重试 |
 | Smart Home | 标准化空间、设备、能力、状态、场景和设备健康 |
 | Connector | Provider、连接健康、授权、发现、成员权限和 Tool 可用性 |
+| Favorites（V2.3） | `FavoriteDto`；`life.favorite.read/write` 下收藏的列表/详情/创建/更新/软删除/导入 |
+| LifeExpert（V2.3） | `LifeExpertRunDto`（`Recommendations`/`Actions`）；`POST /api/v1/experts/personal-life-expert/runs` 的翻牌与行程运行、行程动作确认 |
 
 `RunEvent` 是技术审计记录，`StewardActivity` 是面向用户的可聚合产品动态；前端不可将前者的内部载荷替代后者显示。页面局部交互使用 `StatefulWidget`，需要跨组件响应式刷新的状态使用 `ChangeNotifier`；`watch` 用于读取，`read` 用于命令。每次 `await` 后更新 UI 前检查 `mounted`，所有异步界面均支持 loading、empty、error、retry。
+
+本地 MCP 缓存不是 `Local Repository` 的实现选项：它可能包含仅供受控 Agent 查询的创作者元数据，且同步时机由 Agent 显式决定。移动端不得将其数据、同步状态或敏感字段映射为 UI、日志或持久化状态。
 
 ## 6. 风险、安全与可访问性
 
@@ -142,8 +161,8 @@ flutter analyze lib/
 flutter test --no-pub
 ```
 
-V2.3 还必须验证：L1 批量确认限制、L2/L3 逐项确认、幂等与页面重入恢复、家庭知识权限与冲突呈现、设备异常语义、通知深链权限边界，以及 Dashboard 局部失败不遮蔽待确认事项。产品、信息架构、数据边界或跨端流程变更必须先更新产品总设计；UI Token 变化同步 UI 样式规范和主题实现，工程架构变化同步开发规范。
+V2.3 还必须验证：L1 批量确认限制、L2/L3 逐项确认、幂等与页面重入恢复、家庭知识权限与冲突呈现、设备异常语义、通知深链权限边界、Dashboard 局部失败不遮蔽待确认事项、个人生活专家（life 分类详情/翻牌建议卡/行程日历同步确认/收藏可见性与权限），以及静态扫描确认 Flutter 不包含 MCP stdio/SQLite 客户端、MCP 同步令牌或敏感开关。产品、信息架构、数据边界或跨端流程变更必须先更新产品总设计；UI Token 变化同步 UI 样式规范和主题实现，工程架构变化同步开发规范。
 
 ## 8. 文档联动
 
-本文是产品总设计到前端实现的拆分层。开发计划只维护当前已完成和下一步，不能反向定义产品范围，也不得累计历史变更。当前 V2.3 同步覆盖：统一五 Tab 命名、三级风险确认、家庭知识写入权限、管家动态与技术审计的边界、通知优先级与聚合规则、Phase 1 的质量门槛。
+本文是产品总设计到前端实现的拆分层。开发计划只维护当前已完成和下一步，不能反向定义产品范围，也不得累计历史变更。当前 V2.3 同步覆盖：统一五 Tab 命名、三级风险确认、家庭知识写入权限、管家动态与技术审计的边界、通知优先级与聚合规则、Phase 1 的质量门槛、个人生活专家（探店翻牌、行程规划与日历同步、个人偏好收藏的可见性与权限）。

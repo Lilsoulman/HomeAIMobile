@@ -13,4 +13,7 @@ abstract class AttachmentRepository {
     String? role,
   });
   Future<void> deleteFile(int id);
+
+  /// 下载文件字节流（服务端生成文件下载通道）。
+  Future<Uint8List> downloadFile(int id);
 }

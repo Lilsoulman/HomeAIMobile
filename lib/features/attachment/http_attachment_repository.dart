@@ -47,6 +47,10 @@ class HttpAttachmentRepository implements AttachmentRepository {
   }
 
   @override
+  Future<Uint8List> downloadFile(int id) =>
+      _api.download('/expert-files/$id/content');
+
+  @override
   Future<AttachmentDto> uploadFile({
     required String filename,
     required Uint8List bytes,

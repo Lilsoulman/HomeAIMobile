@@ -6,32 +6,40 @@ class AiConfig {
     this.model,
     this.temperature = .7,
     this.hasApiKey = false,
+    this.enabled = true,
   });
 
   factory AiConfig.fromJson(Map<String, dynamic> json) => AiConfig(
-    endpoint: json['endpoint']?.toString(),
-    model: json['model']?.toString(),
-    temperature: (json['temperature'] as num?)?.toDouble() ?? .7,
+    endpoint: (json['Endpoint'] ?? json['endpoint'])?.toString(),
+    model: (json['Model'] ?? json['model'])?.toString(),
+    temperature: ((json['Temperature'] ?? json['temperature']) as num?)
+            ?.toDouble() ??
+        .7,
     hasApiKey:
-        (json['hasApiKey'] as bool?) ??
-        ((json['apiKeyMasked']?.toString().isNotEmpty ?? false)),
+        ((json['HasApiKey'] ?? json['hasApiKey']) as bool?) ??
+        (((json['ApiKeyMasked'] ?? json['apiKeyMasked'])?.toString().isNotEmpty ??
+            false)),
+    enabled: (json['Enabled'] ?? json['enabled'] ?? true) == true,
   );
 
   final String? endpoint;
   final String? model;
   final double temperature;
   final bool hasApiKey;
+  final bool enabled;
 
   AiConfig copyWith({
     String? endpoint,
     String? model,
     double? temperature,
     bool? hasApiKey,
+    bool? enabled,
   }) => AiConfig(
     endpoint: endpoint ?? this.endpoint,
     model: model ?? this.model,
     temperature: temperature ?? this.temperature,
     hasApiKey: hasApiKey ?? this.hasApiKey,
+    enabled: enabled ?? this.enabled,
   );
 }
 
@@ -48,6 +56,7 @@ abstract class AiRepository {
     required String endpoint,
     required String model,
     required double temperature,
+    required bool enabled,
     String? apiKey,
   });
   Future<AiGenerateResult> generate({
@@ -79,12 +88,14 @@ class HttpAiRepository implements AiRepository {
     required String endpoint,
     required String model,
     required double temperature,
+    required bool enabled,
     String? apiKey,
   }) async {
     final body = <String, dynamic>{
       'endpoint': endpoint,
       'model': model,
       'temperature': temperature,
+      'enabled': enabled,
     };
     if (apiKey != null && apiKey.trim().isNotEmpty) body['apiKey'] = apiKey;
     final raw = await _api.request<dynamic>(
@@ -100,6 +111,7 @@ class HttpAiRepository implements AiRepository {
             model: model,
             temperature: temperature,
             hasApiKey: apiKey?.trim().isNotEmpty ?? false,
+            enabled: enabled,
           );
   }
 

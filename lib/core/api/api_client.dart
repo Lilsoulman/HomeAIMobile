@@ -8,6 +8,8 @@
 //  - /auth/refresh 与 /auth/register / /auth/login 三个端点不挂 Authorization，跳过。
 
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 
@@ -189,6 +191,23 @@ class ApiClient {
     }
   }
 
+  /// 二进制下载专用：返回原始字节流，不走 JSON 包络解析。
+  Future<Uint8List> download(
+    String path, {
+    Map<String, dynamic>? query,
+  }) async {
+    try {
+      final response = await _dio.get<Uint8List>(
+        path,
+        queryParameters: query,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      return response.data ?? Uint8List(0);
+    } on DioException catch (e) {
+      throw _mapDioError(e);
+    }
+  }
+
   /// refresh 专用：不经 401 拦截器（避免递归）。
   Future<bool> refreshAccessToken() async {
     final inFlight = _refreshing;
@@ -274,7 +293,20 @@ class ApiClient {
     }
     if (e.response != null) {
       final status = e.response!.statusCode ?? 0;
-      final body = _tryJsonObject(e.response!.data);
+      var errorData = e.response!.data;
+      if (errorData is List<int>) {
+        try {
+          errorData = utf8.decode(errorData);
+        } catch (_) {
+          errorData = null;
+        }
+      }
+      if (errorData is String) {
+        try {
+          errorData = jsonDecode(errorData);
+        } catch (_) {}
+      }
+      final body = _tryJsonObject(errorData);
       if (body != null) {
         final code = (body['Code'] as num?)?.toInt() ?? status;
         final msg = (body['Msg'] ?? '').toString().trim();

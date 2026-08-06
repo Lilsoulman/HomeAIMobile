@@ -92,6 +92,7 @@ class ExpertRunDto {
     required this.sourceType,
     required this.status,
     this.resultSummary,
+    this.result,
     this.estimatedCredits,
     this.actualCredits,
     required this.createdAt,
@@ -109,6 +110,7 @@ class ExpertRunDto {
     ),
     status: ExpertRunStatus.fromApiValue(json['status'] ?? json['Status']),
     resultSummary: (json['ResultSummary'] ?? json['resultSummary'])?.toString(),
+    result: _stringOrNull(json['Result'] ?? json['result']),
     estimatedCredits: _intOrNull(
       json['EstimatedCredits'] ?? json['estimatedCredits'],
     ),
@@ -127,6 +129,7 @@ class ExpertRunDto {
   final ExpertRunSourceType sourceType;
   final ExpertRunStatus status;
   final String? resultSummary;
+  final String? result;
   final int? estimatedCredits;
   final int? actualCredits;
   final DateTime createdAt;
@@ -156,6 +159,7 @@ class ExpertRunDto {
       sourceType: sourceType,
       status: status,
       resultSummary: resultSummary,
+      result: result,
       estimatedCredits: estimatedCredits,
       actualCredits: actualCredits,
       createdAt: createdAt,

@@ -32,7 +32,9 @@ class _TodoWorkspacePageState extends State<TodoWorkspacePage> {
   bool _kanban = false;
 
   Future<List<TodoDto>> _load() => widget.repository.list();
-  void _reload() => setState(() => _todos = _load());
+  void _reload() => setState(() {
+    _todos = _load();
+  });
 
   @override
   void dispose() {

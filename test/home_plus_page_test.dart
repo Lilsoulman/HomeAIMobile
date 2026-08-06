@@ -65,7 +65,7 @@ void main() {
 
     await tester.tap(find.byTooltip('执行睡眠'));
     await tester.pumpAndSettle();
-    expect(find.text('确认执行"睡眠"'), findsOneWidget);
+    expect(find.text('确认执行“睡眠”'), findsOneWidget);
 
     await tester.tap(find.text('确认执行'));
     await tester.pumpAndSettle();

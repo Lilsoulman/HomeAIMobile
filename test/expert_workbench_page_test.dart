@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nexus_mind_mobile/experts/domain.dart';
@@ -18,6 +20,7 @@ void main() {
     final binding = TestWidgetsFlutterBinding.ensureInitialized();
     binding.platformDispatcher.views.first.physicalSize = _testViewSize;
     binding.platformDispatcher.views.first.devicePixelRatio = 1.0;
+    FilePicker.platform = _FakeFilePicker(result: null);
   });
 
   tearDown(() {
@@ -143,7 +146,11 @@ void main() {
 
     await tester.tap(find.widgetWithText(FilledButton, '确认'));
     await tester.pump();
+    // 确认进行中：按钮仍在但已禁用，防止重复提交
     expect(tester.widget<OutlinedButton>(deviceButton).onPressed, isNull);
+    runRepo.completePending();
+    await tester.pumpAndSettle();
+    expect(find.text('设备行动已提交'), findsOneWidget);
   });
 
   testWidgets('workspace lists attachments and toggles selection', (
@@ -192,6 +199,142 @@ void main() {
     expect(decoded['fileRefs'], hasLength(1));
     expect(decoded['fileRefs'].first, {'id': 1, 'role': 'context'});
   });
+
+  testWidgets('uploading a new file adds it to the workspace list', (
+    tester,
+  ) async {
+    FilePicker.platform = _FakeFilePicker(
+      result: FilePickerResult([
+        PlatformFile(
+          name: '新笔记.md',
+          size: 6,
+          bytes: Uint8List.fromList('abc123'.codeUnits),
+        ),
+      ]),
+    );
+    final attachments = _StubAttachmentRepository();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ExpertWorkspacePage(
+          repository: _StubExpertRepo(),
+          runRepository: _CapturingRunRepo(
+            onStart: (inputJson) => ExpertRunDto(
+              id: 1,
+              sourceType: ExpertRunSourceType.expert,
+              status: ExpertRunStatus.queued,
+              createdAt: DateTime(2026),
+            ),
+          ),
+          attachmentRepository: attachments,
+          expertId: '1',
+          sourceType: ExpertSourceType.expert,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('上传新文件'));
+    await tester.pumpAndSettle();
+
+    expect(attachments.uploaded, hasLength(1));
+    expect(attachments.uploaded.single.filename, '新笔记.md');
+    expect(attachments.uploaded.single.mimeType, 'text/markdown');
+    expect(find.text('新笔记.md'), findsOneWidget);
+    expect(find.text('已上传：新笔记.md'), findsOneWidget);
+  });
+
+  testWidgets('picking existing files via the bottom sheet updates selection', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ExpertWorkspacePage(
+          repository: _StubExpertRepo(),
+          runRepository: _CapturingRunRepo(
+            onStart: (inputJson) => ExpertRunDto(
+              id: 1,
+              sourceType: ExpertRunSourceType.expert,
+              status: ExpertRunStatus.queued,
+              createdAt: DateTime(2026),
+            ),
+          ),
+          attachmentRepository: _StubAttachmentRepository(),
+          expertId: '1',
+          sourceType: ExpertSourceType.expert,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('选择已有'));
+    await tester.pumpAndSettle();
+    expect(find.text('选择已有附件'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(CheckboxListTile, '设备清单.md'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('确定'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('已选 1'), findsOneWidget);
+  });
+
+  testWidgets('removing an attachment deletes it and clears selection', (
+    tester,
+  ) async {
+    final attachments = _StubAttachmentRepository();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ExpertWorkspacePage(
+          repository: _StubExpertRepo(),
+          runRepository: _CapturingRunRepo(
+            onStart: (inputJson) => ExpertRunDto(
+              id: 1,
+              sourceType: ExpertRunSourceType.expert,
+              status: ExpertRunStatus.queued,
+              createdAt: DateTime(2026),
+            ),
+          ),
+          attachmentRepository: attachments,
+          expertId: '1',
+          sourceType: ExpertSourceType.expert,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('本周计划.pdf'));
+    await tester.pumpAndSettle();
+    expect(find.text('已选 1'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('删除附件').first);
+    await tester.pumpAndSettle();
+
+    expect(attachments.deletedIds, [1]);
+    expect(find.text('本周计划.pdf'), findsNothing);
+    expect(find.text('已选 1'), findsNothing);
+  });
+}
+
+class _FakeFilePicker extends FilePicker {
+  _FakeFilePicker({required this.result});
+
+  final FilePickerResult? result;
+
+  @override
+  Future<FilePickerResult?> pickFiles({
+    String? dialogTitle,
+    String? initialDirectory,
+    FileType type = FileType.any,
+    List<String>? allowedExtensions,
+    Function(FilePickerStatus)? onFileLoading,
+    bool allowCompression = true,
+    int compressionQuality = 30,
+    bool allowMultiple = false,
+    bool withData = false,
+    bool withReadStream = false,
+    bool lockParentWindow = false,
+    bool readSequential = false,
+  }) async => result;
 }
 
 class _StubExpertRepo implements ExpertRepository {
@@ -226,6 +369,8 @@ class _StubRunRepo implements ExpertRunRepository {
   @override
   Future<ExpertRunDto> get(int runId) async => _run;
   @override
+  Future<List<ExpertRunDto>> listRuns({int? expertId, int limit = 10}) async => [];
+  @override
   Future<List<ExpertRunEventDto>> listEvents(int runId) async => [];
   @override
   Future<void> cancel(int runId) async {}
@@ -251,6 +396,19 @@ class _ConfirmingRunRepo implements ExpertRunRepository {
   _ConfirmingRunRepo(this._run);
   final ExpertRunDto _run;
   final List<String> keys = [];
+  Completer<ExpertRunActionDto>? _pending;
+  ExpertRunActionType? _pendingActionType;
+
+  /// 完成当前挂起的确认，模拟服务端返回确认结果。
+  void completePending() {
+    final pending = _pending;
+    final actionType = _pendingActionType;
+    _pending = null;
+    _pendingActionType = null;
+    pending?.complete(
+      ExpertRunActionDto(id: 99, status: 'completed', actionType: actionType!),
+    );
+  }
 
   @override
   Future<ExpertRunDto> start({
@@ -261,6 +419,8 @@ class _ConfirmingRunRepo implements ExpertRunRepository {
   }) async => _run;
   @override
   Future<ExpertRunDto> get(int runId) async => _run;
+  @override
+  Future<List<ExpertRunDto>> listRuns({int? expertId, int limit = 10}) async => [];
   @override
   Future<List<ExpertRunEventDto>> listEvents(int runId) async => [];
   @override
@@ -281,11 +441,10 @@ class _ConfirmingRunRepo implements ExpertRunRepository {
     String? actionDescription,
   }) async {
     keys.add(idempotencyKey);
-    return ExpertRunActionDto(
-      id: 99,
-      status: 'completed',
-      actionType: actionType,
-    );
+    _pendingActionType = actionType;
+    final completer = Completer<ExpertRunActionDto>();
+    _pending = completer;
+    return completer.future;
   }
 }
 
@@ -307,6 +466,8 @@ class _CapturingRunRepo implements ExpertRunRepository {
     status: ExpertRunStatus.queued,
     createdAt: DateTime(2026),
   );
+  @override
+  Future<List<ExpertRunDto>> listRuns({int? expertId, int limit = 10}) async => [];
   @override
   Future<List<ExpertRunEventDto>> listEvents(int runId) async => [];
   @override
@@ -330,16 +491,7 @@ class _CapturingRunRepo implements ExpertRunRepository {
 }
 
 class _StubAttachmentRepository implements AttachmentRepository {
-  @override
-  Future<AttachmentDto> deleteFile(int id) async => AttachmentDto(
-    id: id,
-    filename: '',
-    sizeBytes: 0,
-    createdAt: DateTime.now(),
-  );
-
-  @override
-  Future<List<AttachmentDto>> listFiles() async => [
+  final List<AttachmentDto> _files = [
     AttachmentDto(
       id: 1,
       filename: '本周计划.pdf',
@@ -357,6 +509,11 @@ class _StubAttachmentRepository implements AttachmentRepository {
       createdAt: DateTime(2026, 8, 4, 8),
     ),
   ];
+  final List<AttachmentDto> uploaded = [];
+  final List<int> deletedIds = [];
+
+  @override
+  Future<List<AttachmentDto>> listFiles() async => List.of(_files);
 
   @override
   Future<AttachmentDto> uploadFile({
@@ -364,12 +521,32 @@ class _StubAttachmentRepository implements AttachmentRepository {
     required Uint8List bytes,
     String? mimeType,
     String? role,
-  }) async => AttachmentDto(
-    id: 99,
-    filename: filename,
-    sizeBytes: bytes.length,
-    mimeType: mimeType,
-    role: role,
-    createdAt: DateTime.now(),
-  );
+  }) async {
+    final file = AttachmentDto(
+      id: 99,
+      filename: filename,
+      sizeBytes: bytes.length,
+      mimeType: mimeType,
+      role: role,
+      createdAt: DateTime.now(),
+    );
+    uploaded.add(file);
+    _files.add(file);
+    return file;
+  }
+
+  @override
+  Future<Uint8List> downloadFile(int id) async => Uint8List(0);
+
+  @override
+  Future<AttachmentDto> deleteFile(int id) async {
+    deletedIds.add(id);
+    _files.removeWhere((file) => file.id == id);
+    return AttachmentDto(
+      id: id,
+      filename: '',
+      sizeBytes: 0,
+      createdAt: DateTime.now(),
+    );
+  }
 }

@@ -30,7 +30,9 @@ class _ExpertCatalogPageState extends State<ExpertCatalogPage> {
 
   Future<List<Expert>> _load() => widget.repository.listExperts(query: _query);
 
-  void _reload() => setState(() => _experts = _load());
+  void _reload() => setState(() {
+    _experts = _load();
+  });
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -50,10 +52,25 @@ class _ExpertCatalogPageState extends State<ExpertCatalogPage> {
                 NexusPageHeader(
                   title: 'AI 专家',
                   description: '选择合适的专家，把目标变成可确认的下一步。',
-                  action: IconButton(
-                    tooltip: '刷新专家',
-                    onPressed: _reload,
-                    icon: const Icon(Icons.refresh_rounded),
+                  action: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: '周末出行',
+                        onPressed: () => context.push('/ai/travel'),
+                        icon: const Icon(Icons.landscape_outlined),
+                      ),
+                      IconButton(
+                        tooltip: '每日知识',
+                        onPressed: () => context.push('/ai/knowledge'),
+                        icon: const Icon(Icons.auto_stories_outlined),
+                      ),
+                      IconButton(
+                        tooltip: '刷新专家',
+                        onPressed: _reload,
+                        icon: const Icon(Icons.refresh_rounded),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: NexusLayout.sectionGap),
@@ -143,8 +160,9 @@ class _ExpertWorkspacePageState extends State<ExpertWorkspacePage> {
   Future<List<AttachmentDto>> _loadAttachments() =>
       widget.attachmentRepository.listFiles();
 
-  void _reloadAttachments() =>
-      setState(() => _attachments = widget.attachmentRepository.listFiles());
+  void _reloadAttachments() => setState(() {
+    _attachments = widget.attachmentRepository.listFiles();
+  });
 
   @override
   void dispose() {
@@ -382,6 +400,38 @@ class _ExpertWorkspacePageState extends State<ExpertWorkspacePage> {
     }
   }
 
+  int? _generatedFileIdOf(ExpertRunDto run) {
+    final result = run.result;
+    if (result == null || result.isEmpty) return null;
+    try {
+      final json = jsonDecode(result);
+      if (json is Map<String, dynamic>) {
+        final value = json['generatedFileId'];
+        return value is num ? value.toInt() : null;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<void> _downloadGeneratedFile(int fileId) async {
+    try {
+      final bytes = await widget.attachmentRepository.downloadFile(fileId);
+      if (!mounted) return;
+      final path = await FilePicker.platform.saveFile(
+        fileName: 'home-mind-ppt-${DateTime.now().millisecondsSinceEpoch}.pptx',
+        bytes: bytes,
+      );
+      if (!mounted) return;
+      if (path != null) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text('已保存：$path')));
+      }
+    } catch (_) {
+      if (mounted) _showError('文件下载失败，请稍后重试。');
+    }
+  }
+
   void _showError(String message) {
     ScaffoldMessenger.of(
       context,
@@ -432,6 +482,17 @@ class _ExpertWorkspacePageState extends State<ExpertWorkspacePage> {
               )
             else ...[
               _RunStatusCard(run: _run!),
+              if (_run!.status == ExpertRunStatus.completed) ...[
+                const SizedBox(height: NexusLayout.itemGap),
+                _RunResultView(run: _run!),
+                if (_generatedFileIdOf(_run!) case final fileId?) ...[
+                  const SizedBox(height: NexusLayout.itemGap),
+                  _GeneratedFileCard(
+                    fileId: fileId,
+                    onDownload: () => _downloadGeneratedFile(fileId),
+                  ),
+                ],
+              ],
               const SizedBox(height: NexusLayout.itemGap),
               _RunTimeline(events: _events),
               if (_runError != null) ...[
@@ -626,6 +687,258 @@ class _RunStatusCard extends StatelessWidget {
       ],
     ),
   );
+}
+
+/// 运行结果视图：按 JSON 键存在性自适应渲染。
+/// - 含 scenes 数组（视频脚本类专家）：渲染标题/钩子/场景时间轴；
+/// - 否则按通用方案渲染：kind 标签、title、summary、sections、nextSteps；
+/// - 解析失败回退为原始文本。
+class _RunResultView extends StatelessWidget {
+  const _RunResultView({required this.run});
+
+  final ExpertRunDto run;
+
+  @override
+  Widget build(BuildContext context) {
+    final result = run.result;
+    if (result == null || result.isEmpty) return const SizedBox.shrink();
+    Map<String, dynamic> json;
+    try {
+      final decoded = jsonDecode(result);
+      json = decoded is Map<String, dynamic>
+          ? decoded
+          : <String, dynamic>{};
+    } catch (_) {
+      return NexusSurface(
+        padding: const EdgeInsets.all(20),
+        child: Text(result),
+      );
+    }
+    final scenes = json['scenes'];
+    if (scenes is List && scenes.isNotEmpty) {
+      return _SceneResultView(json: json, scenes: scenes);
+    }
+    return _SectionResultView(json: json);
+  }
+}
+
+class _SectionResultView extends StatelessWidget {
+  const _SectionResultView({required this.json});
+
+  final Map<String, dynamic> json;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final kind = json['kind']?.toString();
+    final title = json['title']?.toString();
+    final summary = json['summary']?.toString();
+    final sections = json['sections'];
+    final nextSteps = json['nextSteps'];
+    final label = switch (kind) {
+      'morning_meeting' => '晨会方案',
+      'study_session' => '课程设计',
+      'activity' => '活动策划',
+      'bp' => 'BP 框架',
+      _ => null,
+    };
+    return NexusSurface(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (label != null) ...[
+            _KindTag(label: label),
+            const SizedBox(height: 10),
+          ],
+          if (title != null && title.isNotEmpty)
+            Text(title, style: theme.textTheme.titleLarge),
+          if (summary != null && summary.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(summary, style: theme.textTheme.bodyMedium),
+          ],
+          if (sections is List && sections.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            ...sections.whereType<Map>().map(
+              (section) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      section['heading']?.toString() ?? '',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(section['content']?.toString() ?? ''),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          if (nextSteps is List && nextSteps.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text('下一步', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 6),
+            ...nextSteps.whereType<String>().map(
+              (step) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.only(top: 6),
+                      child: Icon(Icons.circle, size: 6),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(step)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SceneResultView extends StatelessWidget {
+  const _SceneResultView({required this.json, required this.scenes});
+
+  final Map<String, dynamic> json;
+  final List<dynamic> scenes;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final title = json['title']?.toString();
+    final hook = json['hook']?.toString();
+    final duration = json['durationSeconds'];
+    final summary = json['summary']?.toString();
+    return NexusSurface(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (title != null && title.isNotEmpty)
+            Text(title, style: theme.textTheme.titleLarge),
+          if (duration != null) ...[
+            const SizedBox(height: 4),
+            Text('时长：$duration 秒', style: theme.textTheme.bodySmall),
+          ],
+          if (hook != null && hook.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text('钩子：$hook', style: theme.textTheme.bodyMedium),
+          ],
+          const SizedBox(height: 14),
+          ...scenes.whereType<Map>().map(
+            (scene) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        '场景 ${scene['sceneNo'] ?? '?'}',
+                        style: theme.textTheme.titleSmall,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        scene['timeRange']?.toString() ?? '',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                  if (scene['visual']?.toString().isNotEmpty == true) ...[
+                    const SizedBox(height: 4),
+                    Text('画面：${scene['visual']}'),
+                  ],
+                  if (scene['voiceover']?.toString().isNotEmpty == true)
+                    Text('口播：${scene['voiceover']}'),
+                  if (scene['note']?.toString().isNotEmpty == true)
+                    Text(
+                      '提示：${scene['note']}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          if (summary != null && summary.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(summary, style: theme.textTheme.bodyMedium),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _KindTag extends StatelessWidget {
+  const _KindTag({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(NexusLayout.controlRadius),
+      ),
+      child: Text(
+        label,
+        style: theme.textTheme.labelMedium?.copyWith(
+          color: theme.colorScheme.primary,
+        ),
+      ),
+    );
+  }
+}
+
+class _GeneratedFileCard extends StatelessWidget {
+  const _GeneratedFileCard({required this.fileId, required this.onDownload});
+
+  final int fileId;
+  final VoidCallback onDownload;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return NexusSurface(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          Icon(
+            Icons.description_outlined,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('PPT 文件已生成', style: theme.textTheme.titleMedium),
+                const SizedBox(height: 4),
+                Text('点击下载保存到本地', style: theme.textTheme.bodySmall),
+              ],
+            ),
+          ),
+          FilledButton.tonalIcon(
+            onPressed: onDownload,
+            icon: const Icon(Icons.download_rounded),
+            label: const Text('下载'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _RunTimeline extends StatelessWidget {

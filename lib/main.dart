@@ -12,6 +12,12 @@ import 'core/ui/nexus_theme.dart';
 import 'features/ai/ai_repository.dart';
 import 'features/attachment/attachment_repository.dart';
 import 'features/attachment/http_attachment_repository.dart';
+import 'features/automation/automation_repository.dart';
+import 'features/automation/http_automation_repository.dart';
+import 'features/knowledge/http_knowledge_repository.dart';
+import 'features/knowledge/knowledge_repository.dart';
+import 'features/travel/http_travel_repository.dart';
+import 'features/travel/travel_repository.dart';
 import 'features/auth/auth_controller.dart';
 import 'features/auth/http_auth_repository.dart';
 import 'features/calendar/calendar_repository.dart';
@@ -81,6 +87,9 @@ class NexusMindApp extends StatelessWidget {
     final smartHomeRepo = HttpSmartHomeRepository(api);
     final connectorRepo = HttpConnectorRepository(api);
     final attachmentRepo = HttpAttachmentRepository(api);
+    final knowledgeRepo = HttpKnowledgeRepository(api);
+    final automationRepo = HttpAutomationRepository(api);
+    final travelRepo = HttpTravelRepository(api);
 
     return MultiProvider(
       providers: [
@@ -98,6 +107,9 @@ class NexusMindApp extends StatelessWidget {
         Provider<SmartHomeRepository>.value(value: smartHomeRepo),
         Provider<ConnectorRepository>.value(value: connectorRepo),
         Provider<AttachmentRepository>.value(value: attachmentRepo),
+        Provider<KnowledgeRepository>.value(value: knowledgeRepo),
+        Provider<AutomationRepository>.value(value: automationRepo),
+        Provider<TravelRepository>.value(value: travelRepo),
       ],
       child: _Root(env: env),
     );

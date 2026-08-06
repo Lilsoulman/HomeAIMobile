@@ -10,6 +10,9 @@ abstract class ExpertRunRepository {
 
   Future<ExpertRunDto> get(int runId);
 
+  /// 列出当前用户的运行记录，可按专家与来源筛选。
+  Future<List<ExpertRunDto>> listRuns({int? expertId, int limit = 10});
+
   Future<List<ExpertRunEventDto>> listEvents(int runId);
 
   Future<void> cancel(int runId);

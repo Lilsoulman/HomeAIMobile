@@ -39,7 +39,9 @@ class _CalendarWorkspacePageState extends State<CalendarWorkspacePage> {
     );
   }
 
-  void _reload() => setState(() => _data = _load());
+  void _reload() => setState(() {
+    _data = _load();
+  });
   void _shift(int amount) {
     setState(() {
       _focused = switch (_view) {
