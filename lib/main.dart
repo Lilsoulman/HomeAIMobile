@@ -24,12 +24,18 @@ import 'features/calendar/calendar_repository.dart';
 import 'features/calendar/http_calendar_repository.dart';
 import 'features/connector/connector_repository.dart';
 import 'features/connector/http_connector_repository.dart';
+import 'features/dashboard/dashboard_repository.dart';
+import 'features/dashboard/http_dashboard_repository.dart';
+import 'features/family/family_repository.dart';
+import 'features/family/http_family_repository.dart';
 import 'features/expert/expert_run_repository.dart';
 import 'features/expert/http_expert_repository.dart';
 import 'features/expert/http_expert_run_repository.dart';
 import 'experts/expert_repository.dart';
 import 'features/skill/http_skill_repository.dart';
 import 'features/skill/skill_repository.dart';
+import 'features/steward/http_steward_repository.dart';
+import 'features/steward/steward_repository.dart';
 import 'features/smart_home/http_smart_home_repository.dart';
 import 'features/smart_home/smart_home_repository.dart';
 import 'features/todo/http_todo_repository.dart';
@@ -90,6 +96,15 @@ class NexusMindApp extends StatelessWidget {
     final knowledgeRepo = HttpKnowledgeRepository(api);
     final automationRepo = HttpAutomationRepository(api);
     final travelRepo = HttpTravelRepository(api);
+    final familyRepo = HttpFamilyRepository(
+      api,
+      homeIdOf: () => auth.tenantId ?? 0,
+    );
+    final stewardRepo = HttpStewardRepository(
+      api,
+      homeIdOf: () => auth.tenantId ?? 0,
+    );
+    final dashboardRepo = HttpDashboardRepository(api);
 
     return MultiProvider(
       providers: [
@@ -110,6 +125,9 @@ class NexusMindApp extends StatelessWidget {
         Provider<KnowledgeRepository>.value(value: knowledgeRepo),
         Provider<AutomationRepository>.value(value: automationRepo),
         Provider<TravelRepository>.value(value: travelRepo),
+        Provider<FamilyRepository>.value(value: familyRepo),
+        Provider<StewardRepository>.value(value: stewardRepo),
+        Provider<DashboardRepository>.value(value: dashboardRepo),
       ],
       child: _Root(env: env),
     );

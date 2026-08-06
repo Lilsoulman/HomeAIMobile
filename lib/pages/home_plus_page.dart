@@ -460,14 +460,9 @@ class _RoomImage extends StatelessWidget {
 
   final SmartHomeSpaceDto space;
 
+  // P1 收口：客户端不直连第三方 Endpoint，房间图统一使用本地渐变占位。
   @override
-  Widget build(BuildContext context) => Image.network(
-    _roomImageUrl(space.type),
-    fit: BoxFit.cover,
-    errorBuilder: (_, _, _) => _RoomImageFallback(type: space.type),
-    loadingBuilder: (context, child, loadingProgress) =>
-        loadingProgress == null ? child : _RoomImageFallback(type: space.type),
-  );
+  Widget build(BuildContext context) => _RoomImageFallback(type: space.type);
 }
 
 class _RoomImageFallback extends StatelessWidget {
@@ -779,12 +774,3 @@ String _temperatureLabel(List<SmartHomeDeviceDto> devices) {
   final match = RegExp(r'\d+°C').firstMatch(detail);
   return match?.group(0) ?? '环境正常';
 }
-
-String _roomImageUrl(String type) => switch (type) {
-  'living_room' =>
-    'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1200&q=85',
-  'bedroom' =>
-    'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=1200&q=85',
-  _ =>
-    'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=1200&q=85',
-};

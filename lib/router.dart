@@ -19,9 +19,12 @@ import 'pages/dashboard_page.dart';
 import 'pages/home_plus_page.dart';
 import 'pages/auth/login_page.dart';
 import 'pages/calendar_workspace_page.dart';
+import 'pages/confirmation_center_page.dart';
 import 'pages/connector_center_page.dart';
 import 'pages/daily_knowledge_page.dart';
 import 'pages/expert_workbench_page.dart';
+import 'pages/family/family_knowledge_page.dart';
+import 'pages/family/family_members_page.dart';
 import 'pages/plan_page.dart';
 import 'pages/travel_page.dart';
 import 'pages/todo_workspace_page.dart';
@@ -75,8 +78,8 @@ GoRouter buildAppRouter({
                       travelRepository: context.read<TravelRepository>(),
                       expertRepository: context.read<ExpertRepository>(),
                       runRepository: context.read<ExpertRunRepository>(),
-                      automationRepository:
-                          context.read<AutomationRepository>(),
+                      automationRepository: context
+                          .read<AutomationRepository>(),
                     ),
                   ),
                   GoRoute(
@@ -84,10 +87,9 @@ GoRouter buildAppRouter({
                     builder: (context, _) => DailyKnowledgePage(
                       expertRepository: context.read<ExpertRepository>(),
                       runRepository: context.read<ExpertRunRepository>(),
-                      knowledgeRepository:
-                          context.read<KnowledgeRepository>(),
-                      automationRepository:
-                          context.read<AutomationRepository>(),
+                      knowledgeRepository: context.read<KnowledgeRepository>(),
+                      automationRepository: context
+                          .read<AutomationRepository>(),
                     ),
                   ),
                   GoRoute(
@@ -132,6 +134,10 @@ GoRouter buildAppRouter({
                       todoRepository: context.read<TodoRepository>(),
                     ),
                   ),
+                  GoRoute(
+                    path: 'confirmations',
+                    builder: (_, _) => const ConfirmationCenterPage(),
+                  ),
                 ],
               ),
             ],
@@ -160,6 +166,14 @@ GoRouter buildAppRouter({
                   GoRoute(
                     path: 'connectors',
                     builder: (context, _) => const ConnectorCenterPage(),
+                  ),
+                  GoRoute(
+                    path: 'family-members',
+                    builder: (_, _) => const FamilyMembersPage(),
+                  ),
+                  GoRoute(
+                    path: 'family-knowledge',
+                    builder: (_, _) => const FamilyKnowledgePage(),
                   ),
                 ],
               ),

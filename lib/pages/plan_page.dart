@@ -5,10 +5,12 @@ import 'package:provider/provider.dart';
 import '../core/ui/nexus_theme.dart';
 import '../features/calendar/calendar_repository.dart';
 import '../features/calendar/dto.dart';
+import '../features/steward/steward_repository.dart';
 import '../features/todo/dto.dart';
 import '../features/todo/todo_repository.dart';
+import '../widgets/confirmation_section.dart';
 
-enum _PlanMode { tasks, calendar }
+enum _PlanMode { confirmations, tasks, calendar }
 
 class PlanPage extends StatefulWidget {
   const PlanPage({super.key});
@@ -79,6 +81,11 @@ class _PlanPageState extends State<PlanPage> {
               SegmentedButton<_PlanMode>(
                 segments: const [
                   ButtonSegment(
+                    value: _PlanMode.confirmations,
+                    icon: Icon(Icons.verified_user_outlined),
+                    label: Text('待确认'),
+                  ),
+                  ButtonSegment(
                     value: _PlanMode.tasks,
                     icon: Icon(Icons.checklist_rounded),
                     label: Text('任务'),
@@ -96,17 +103,34 @@ class _PlanPageState extends State<PlanPage> {
               const SizedBox(height: 16),
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 250),
-                child: _mode == _PlanMode.tasks
-                    ? _TaskSummary(
-                        key: const ValueKey('tasks'),
-                        todos: summary.todos,
-                        onOpen: () => context.push('/plan/todos'),
-                      )
-                    : _CalendarSummary(
-                        key: const ValueKey('calendar'),
-                        events: summary.events,
-                        onOpen: () => context.push('/plan/calendar'),
+                child: switch (_mode) {
+                  _PlanMode.confirmations => Column(
+                    key: const ValueKey('confirmations'),
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ConfirmationSection(
+                        repository: context.read<StewardRepository>(),
                       ),
+                      Center(
+                        child: TextButton.icon(
+                          onPressed: () => context.push('/plan/confirmations'),
+                          icon: const Icon(Icons.open_in_full_rounded),
+                          label: const Text('查看全部'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  _PlanMode.tasks => _TaskSummary(
+                    key: const ValueKey('tasks'),
+                    todos: summary.todos,
+                    onOpen: () => context.push('/plan/todos'),
+                  ),
+                  _PlanMode.calendar => _CalendarSummary(
+                    key: const ValueKey('calendar'),
+                    events: summary.events,
+                    onOpen: () => context.push('/plan/calendar'),
+                  ),
+                },
               ),
             ],
           );

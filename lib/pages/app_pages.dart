@@ -360,6 +360,24 @@ class ProfilePage extends StatelessWidget {
               },
             ),
           ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 24, 16, 4),
+            child: Text('家庭', style: TextStyle(fontWeight: FontWeight.w600)),
+          ),
+          ListTile(
+            leading: const Icon(Icons.group_outlined),
+            title: const Text('家庭成员'),
+            subtitle: const Text('管理家庭成员与生命周期状态'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/me/family-members'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.menu_book_outlined),
+            title: const Text('家庭知识'),
+            subtitle: const Text('查看与维护家庭共享知识库'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/me/family-knowledge'),
+          ),
           ListTile(
             leading: const Icon(Icons.hub_outlined),
             title: const Text('连接服务'),

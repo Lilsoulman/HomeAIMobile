@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nexus_mind_mobile/core/ui/nexus_theme.dart';
 import 'package:nexus_mind_mobile/features/calendar/calendar_repository.dart';
 import 'package:nexus_mind_mobile/features/calendar/dto.dart';
+import 'package:nexus_mind_mobile/features/steward/dto.dart';
+import 'package:nexus_mind_mobile/features/steward/steward_repository.dart';
 import 'package:nexus_mind_mobile/features/todo/dto.dart';
 import 'package:nexus_mind_mobile/features/todo/todo_repository.dart';
 import 'package:nexus_mind_mobile/pages/plan_page.dart';
@@ -19,6 +21,7 @@ void main() {
         providers: [
           Provider<TodoRepository>.value(value: _StubTodoRepo()),
           Provider<CalendarRepository>.value(value: _StubCalendarRepo()),
+          Provider<StewardRepository>.value(value: _StubStewardRepo(items: [])),
         ],
         child: MaterialApp(
           theme: NexusTheme.light(NexusPalette.aiAccent),
@@ -36,6 +39,46 @@ void main() {
 
     expect(find.text('接下来的日程'), findsOneWidget);
     expect(find.text('查看日历'), findsOneWidget);
+  });
+
+  testWidgets('plan switches to the pending confirmations segment', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          Provider<TodoRepository>.value(value: _StubTodoRepo()),
+          Provider<CalendarRepository>.value(value: _StubCalendarRepo()),
+          Provider<StewardRepository>.value(
+            value: _StubStewardRepo(
+              items: [
+                ConfirmationItemDto(
+                  id: 1,
+                  riskLevel: 'L2',
+                  title: '中风险确认项',
+                  impactSummary: '影响摘要',
+                  status: 'pending',
+                  updatedAt: _now,
+                ),
+              ],
+            ),
+          ),
+        ],
+        child: MaterialApp(
+          theme: NexusTheme.light(NexusPalette.aiAccent),
+          home: const PlanPage(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.text('待确认'));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+
+    expect(find.text('中风险确认项'), findsOneWidget);
+    expect(find.text('L2'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, '确认'), findsOneWidget);
   });
 }
 
@@ -206,4 +249,44 @@ class _StubCalendarRepo implements CalendarRepository {
 
   @override
   Future<void> deleteSubscription(int id) async {}
+}
+
+class _StubStewardRepo implements StewardRepository {
+  _StubStewardRepo({required this.items});
+
+  final List<ConfirmationItemDto> items;
+
+  @override
+  Future<List<ConfirmationItemDto>> listConfirmations({
+    String? riskLevel,
+    String? status,
+  }) async => items;
+
+  @override
+  Future<ConfirmationBatchResultDto> batchConfirm(
+    List<int> confirmationIds, {
+    required String idempotencyKey,
+  }) async => ConfirmationBatchResultDto(confirmedCount: 0, items: const []);
+
+  @override
+  Future<ConfirmationItemDto> confirm(
+    int id, {
+    required String idempotencyKey,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<ConfirmationItemDto> deny(int id, {required String reason}) =>
+      throw UnimplementedError();
+
+  @override
+  Future<StewardActivityPageDto> listActivities({
+    int limit = 20,
+    String? cursor,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<StewardActivityDto> getActivity(int id) => throw UnimplementedError();
+
+  @override
+  Future<StewardActivityDto> undoActivity(int id) => throw UnimplementedError();
 }

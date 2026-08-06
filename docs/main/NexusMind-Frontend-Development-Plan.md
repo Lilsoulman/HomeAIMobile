@@ -4,8 +4,8 @@
 > **前端设计依据：** [NexusMind-Frontend-Development.md](NexusMind-Frontend-Development.md)
 > **计划性质：** 当前实施快照。只维护已完成和下一步，不保留迭代历史，也不改变产品或接口契约。
 
-最近同步：2026-08-06
-当前目标：完成既有单专家文件上下文的测试收尾，同时在服务端 V2.2（B9-B14）与 V2.3 个人生活专家（B15-B17）契约已发布的前提下，依次交付家庭协同数据层、管家工作台、设置、能力/家庭状态，以及个人生活专家（收藏管理、探店翻牌、行程规划与日历同步）。
+最近同步：2026-08-07
+当前目标：在服务端 V2.2（B9-B14）与 V2.3 个人生活专家（B15-B17）契约已发布的前提下，依次交付家庭协同数据层、管家工作台、设置、能力/家庭状态，以及个人生活专家（收藏管理、探店翻牌、行程规划与日历同步）。
 
 ## 1. 不变基线
 
@@ -26,16 +26,16 @@
 | AgentRun/Expert Run 闭环 | 已完成 | 七态 UI、可公开事件时间线、Action 确认、取消/重试、终态停轮询与新幂等键 |
 | SmartHome、Todo、Calendar HTTP Repository | 已完成 | 通过 `ApiClient` 消费已发布契约，DTO 显式映射并有仓库测试 |
 | 安全展示基线 | 已完成 | 页面不渲染 Prompt、思考过程、原始事件、供应商字段、凭据或设备实体 ID |
+| P0 单专家文件上下文 | 已完成 | 上传/选择/移除/删除/发起 Run 闭环 Widget 测试通过；`fileRefs` 仅传 `{id, role}`；视口/滚动可点击性修复后 `flutter test` 40/40 全绿 |
+| P2 家庭协同数据层 | 已完成 | `Family`（成员/知识/决策）、`Steward`（管家动态/确认中心）、`Dashboard` 的 DTO/Repository/HTTP 实现按已发布契约完成（字段来自服务端 ViewModels 与 `frontend-api-integration.md`）；映射/错误/批量确认请求体约束测试通过，`flutter test` 49/49 全绿 |
+| P1 客户端后端代理审计与收口 | 已完成 | 客户端无第三方 Key、Endpoint 或 SDK 直连（房间图 unsplash 直连移除，改本地渐变占位）；AI 与 Connector 均经 `ApiClient`；静态扫描无残留，相关测试全绿 |
+| P3 管家工作台与确认中心 | 已完成 | Dashboard 聚合视图四区块（待确认 → 管家动态 → 家庭概览 → 快捷入口，各模块独立降级）；Plan 三段（待确认/任务/日历）；共享确认组件 `ConfirmationSection` 支持 L1 批量确认（新幂等键）、L2/L3 逐项确认/拒绝（理由输入）、失败重试复用同一幂等键（重入恢复）、批量局部失败按结果逐项更新；确认中心页面 `confirmation_center_page.dart`（风险过滤 + Dashboard/Plan 查看全部入口）；用例通过，`flutter test` 72/72 全绿 |
+| P4 家庭设置 | 已完成 | ProfilePage 增加家庭成员/家庭知识入口；`family_members_page.dart` 成员列表/新建/编辑/生命周期状态（`memberStatus` 值域按服务端契约，终态变更走 `correctMember` 受控更正并必填理由）；`family_knowledge_page.dart` 知识列表/分类筛选/本地搜索/新建与编辑（`writeKnowledge` 同 key 重写）/删除二次确认/AI 来源与置信度/冲突解决展示；无权限/空/错误/重试状态可用；用例通过，`flutter test` 72/72 全绿 |
 
 ## 3. 下一步
 
 | 优先级 | 交付 | 前置条件 | 最小验收 |
 | --- | --- | --- | --- |
-| P0 | 单专家文件上下文测试收尾 | 无新增产品或 API 依赖；修复现有 Widget 测试视口/滚动可点击性 | 上传、选择、移除、删除、发起 Run 闭环；`fileRefs` 仅传 `{id, role}`；相关仓库和 Widget 测试全绿 |
-| P1 | 客户端后端代理审计与收口 | 以已发布 `/api/v1` AI、Connector、附件契约为准 | 客户端无第三方 Key、Endpoint 或 SDK 直连；AI 与 Connector 均经 `ApiClient`；静态扫描和相关 HTTP Repository 测试通过 |
-| P2 | 家庭协同数据层 | 服务端 V2.2 B9-B14 字段级契约已发布 | `Family`、`Confirmation`、`Steward`、`Dashboard` 的 DTO/Repository 抽象、HTTP 实现和映射/错误/风险限制测试完成；不猜测 HTTP 字段 |
-| P3 | 管家工作台与确认中心 | P2 的 Repository 可用；批量确认 API 明确原子校验和幂等语义 | Dashboard 为“待确认 → 动态 → 家庭概览 → 快捷入口”；Plan 为“待确认/任务/日历”；L1 批量确认、L2/L3 逐项确认、重入恢复和局部失败用例通过 |
-| P4 | 家庭设置 | Family API 字段级契约已发布（B11）；成员和知识权限规则可消费 | `settings_page.dart`、成员和知识库页面及路由完成；成员生命周期、知识写入权限/冲突、CRUD、删除确认、无权限和重试可用 |
 | P5 | 能力托管、家庭状态与风险组件 | Steward、Expert 托管和设备健康字段可消费 | 能力中心的托管/风险说明、家庭离线/低电量/弱信号、动态入口、`ConfirmationCard`/`RiskBadge`/`StewardTimelineTile` 和主题语义完成 |
 | P5b | 个人偏好收藏管理 | 服务端 V2.3 B15 收藏契约已发布（`life.favorite.read/write`） | `FavoriteDto`/`FavoriteRepository`、`favorites_page.dart`（分类列表/新建/编辑/软删除/导入）；`private` 仅本人可见、无权限/空/错误/重试状态可用 |
 | P5c | 个人生活专家：翻牌与行程 | 服务端 V2.3 B16/B17 契约已发布（`POST /api/v1/experts/personal-life-expert/runs` 与行程确认） | `life` 分类能力详情、翻牌页（时间/位置/口味 → 建议卡）、行程页（目的地/天数 → 每日安排 + `calendar_create_event` L1 确认与幂等提交、确认后日历同步提示）；不渲染提示或思考链 |
