@@ -66,6 +66,16 @@ class _ExpertCatalogPageState extends State<ExpertCatalogPage> {
                         icon: const Icon(Icons.auto_stories_outlined),
                       ),
                       IconButton(
+                        tooltip: '探店翻牌',
+                        onPressed: () => context.push('/ai/life-recommend'),
+                        icon: const Icon(Icons.explore_outlined),
+                      ),
+                      IconButton(
+                        tooltip: '行程规划',
+                        onPressed: () => context.push('/ai/life-trip'),
+                        icon: const Icon(Icons.luggage_outlined),
+                      ),
+                      IconButton(
                         tooltip: '刷新专家',
                         onPressed: _reload,
                         icon: const Icon(Icons.refresh_rounded),
@@ -565,6 +575,13 @@ class _ExpertCard extends StatelessWidget {
                     '${expert.category} · 预计 ${expert.estimatedCredits} 积分',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '家庭管家托管执行 · 仅 L3 行动需你确认',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -594,6 +611,14 @@ class _ExpertSummary extends StatelessWidget {
         Text(
           '分类：${expert.category} · 预计 ${expert.estimatedCredits} 积分',
           style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 10),
+        Text(
+          '运行由家庭管家托管执行：L1 低风险自动确认，L2 建议你逐项确认，'
+          'L3 需你逐项决定，行动可追溯。',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       ],
     ),
@@ -705,9 +730,7 @@ class _RunResultView extends StatelessWidget {
     Map<String, dynamic> json;
     try {
       final decoded = jsonDecode(result);
-      json = decoded is Map<String, dynamic>
-          ? decoded
-          : <String, dynamic>{};
+      json = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
     } catch (_) {
       return NexusSurface(
         padding: const EdgeInsets.all(20),
@@ -915,10 +938,7 @@ class _GeneratedFileCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       child: Row(
         children: [
-          Icon(
-            Icons.description_outlined,
-            color: theme.colorScheme.primary,
-          ),
+          Icon(Icons.description_outlined, color: theme.colorScheme.primary),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

@@ -56,6 +56,97 @@ class SmartHomeDeviceDto {
       );
 }
 
+/// 设备健康聚合（B10 发布）：`GET /api/v1/smart-home/devices/health`。
+/// DominantStatus 取值 healthy | degraded | offline | low_battery。
+class DeviceHealthSummaryDto {
+  const DeviceHealthSummaryDto({
+    required this.total,
+    required this.healthy,
+    required this.degraded,
+    required this.offline,
+    required this.lowBattery,
+    this.dominantStatus,
+  });
+
+  factory DeviceHealthSummaryDto.fromJson(Map<String, dynamic> json) =>
+      DeviceHealthSummaryDto(
+        total: _intValue(json, 'Total'),
+        healthy: _intValue(json, 'Healthy'),
+        degraded: _intValue(json, 'Degraded'),
+        offline: _intValue(json, 'Offline'),
+        lowBattery: _intValue(json, 'LowBattery'),
+        dominantStatus: _stringValue(json, 'DominantStatus').isEmpty
+            ? null
+            : _stringValue(json, 'DominantStatus'),
+      );
+
+  final int total;
+  final int healthy;
+  final int degraded;
+  final int offline;
+  final int lowBattery;
+  final String? dominantStatus;
+}
+
+/// 单台设备健康详情（B14 发布）：`GET /api/v1/smart-home/devices/{id}/health`。
+/// HealthStatus 取值 healthy | degraded | offline | low_battery；
+/// StateUpdatedAt 是最近采样时间，过期状态不得描述为实时。
+class DeviceHealthDetailDto {
+  const DeviceHealthDetailDto({
+    required this.id,
+    this.spaceId,
+    required this.name,
+    required this.deviceType,
+    required this.onlineStatus,
+    this.zigbeeRole,
+    this.batteryLevel,
+    this.signalLqi,
+    this.healthStatus,
+    this.stateUpdatedAt,
+  });
+
+  factory DeviceHealthDetailDto.fromJson(Map<String, dynamic> json) =>
+      DeviceHealthDetailDto(
+        id: _intValue(json, 'Id'),
+        spaceId: _nullableInt(json, 'SpaceId'),
+        name: _stringValue(json, 'Name'),
+        deviceType: _stringValue(json, 'DeviceType'),
+        onlineStatus: _stringValue(json, 'OnlineStatus'),
+        zigbeeRole: _nullableString(json, 'ZigbeeRole'),
+        batteryLevel: _nullableInt(json, 'BatteryLevel'),
+        signalLqi: _nullableInt(json, 'SignalLqi'),
+        healthStatus: _nullableString(json, 'HealthStatus'),
+        stateUpdatedAt: _dateValue(json, 'StateUpdatedAt'),
+      );
+
+  final int id;
+  final int? spaceId;
+  final String name;
+  final String deviceType;
+  final String onlineStatus;
+  final String? zigbeeRole;
+  final int? batteryLevel;
+  final int? signalLqi;
+  final String? healthStatus;
+  final DateTime? stateUpdatedAt;
+
+  /// 健康语义标签（中文），用于 UI 展示而非原始值。
+  String get healthLabel => switch (healthStatus) {
+    'healthy' => '状态正常',
+    'degraded' => '性能降级',
+    'offline' => '已离线',
+    'low_battery' => '电量不足',
+    _ => onlineStatus == 'online' ? '状态正常' : '已离线',
+  };
+
+  /// 是否低电量（≤ 20%），UI 叠加"低电量"徽标。
+  bool get isLowBattery =>
+      healthStatus != 'offline' && (batteryLevel ?? 100) <= 20;
+
+  /// 是否弱信号（LQI < 60），UI 叠加"弱信号"徽标。
+  bool get isWeakSignal => (signalLqi ?? 128) < 60;
+}
+
 class SmartSceneDto {
   const SmartSceneDto({
     required this.key,
@@ -95,11 +186,19 @@ class SmartSceneDto {
 String _stringValue(Map<String, dynamic> json, String key) =>
     (json[key] ?? json[_camelCase(key)])?.toString() ?? '';
 
+String? _nullableString(Map<String, dynamic> json, String key) =>
+    (json[key] ?? json[_camelCase(key)])?.toString();
+
 int _intValue(Map<String, dynamic> json, String key) {
   final value = json[key] ?? json[_camelCase(key)];
   return value is num
       ? value.toInt()
       : int.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+int? _nullableInt(Map<String, dynamic> json, String key) {
+  final value = json[key] ?? json[_camelCase(key)];
+  return value is num ? value.toInt() : int.tryParse(value?.toString() ?? '');
 }
 
 bool _boolValue(

@@ -44,6 +44,31 @@ class HttpSmartHomeRepository implements SmartHomeRepository {
   }
 
   @override
+  Future<DeviceHealthSummaryDto> fetchDeviceHealthSummary({
+    String? spaceId,
+  }) async {
+    final query = <String, dynamic>{};
+    if (spaceId != null && spaceId.isNotEmpty) query['spaceId'] = spaceId;
+    final raw = await _api.request<dynamic>(
+      method: 'GET',
+      path: '/smart-home/devices/health',
+      query: query,
+      parseData: (value) => value,
+    );
+    return DeviceHealthSummaryDto.fromJson(_asMap(raw));
+  }
+
+  @override
+  Future<DeviceHealthDetailDto> fetchDeviceHealth(int deviceId) async {
+    final raw = await _api.request<dynamic>(
+      method: 'GET',
+      path: '/smart-home/devices/$deviceId/health',
+      parseData: (value) => value,
+    );
+    return DeviceHealthDetailDto.fromJson(_asMap(raw));
+  }
+
+  @override
   Future<SmartSceneDto> runScene(String key) async {
     await _api.request<dynamic>(
       method: 'POST',
@@ -69,4 +94,7 @@ class HttpSmartHomeRepository implements SmartHomeRepository {
         .map((item) => item.cast<String, dynamic>())
         .toList();
   }
+
+  static Map<String, dynamic> _asMap(dynamic raw) =>
+      (raw as Map).cast<String, dynamic>();
 }

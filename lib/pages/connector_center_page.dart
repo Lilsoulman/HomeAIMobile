@@ -178,16 +178,19 @@ class _ConnectorCenterPageState extends State<ConnectorCenterPage> {
                     child: Column(
                       children: availableProviders
                           .map(
-                            (provider) => ListTile(
-                              leading: const Icon(Icons.add_link_outlined),
-                              title: Text(provider.name),
-                              subtitle: Text(provider.description),
-                              trailing: IconButton(
-                                tooltip: '连接${provider.name}',
-                                onPressed: _workingKey == null
-                                    ? () => _beginAuthorization(provider)
-                                    : null,
-                                icon: const Icon(Icons.add_rounded),
+                            (provider) => Material(
+                              type: MaterialType.transparency,
+                              child: ListTile(
+                                leading: const Icon(Icons.add_link_outlined),
+                                title: Text(provider.name),
+                                subtitle: Text(provider.description),
+                                trailing: IconButton(
+                                  tooltip: '连接${provider.name}',
+                                  onPressed: _workingKey == null
+                                      ? () => _beginAuthorization(provider)
+                                      : null,
+                                  icon: const Icon(Icons.add_rounded),
+                                ),
                               ),
                             ),
                           )

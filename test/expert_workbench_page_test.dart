@@ -369,7 +369,8 @@ class _StubRunRepo implements ExpertRunRepository {
   @override
   Future<ExpertRunDto> get(int runId) async => _run;
   @override
-  Future<List<ExpertRunDto>> listRuns({int? expertId, int limit = 10}) async => [];
+  Future<List<ExpertRunDto>> listRuns({int? expertId, int limit = 10}) async =>
+      [];
   @override
   Future<List<ExpertRunEventDto>> listEvents(int runId) async => [];
   @override
@@ -420,7 +421,8 @@ class _ConfirmingRunRepo implements ExpertRunRepository {
   @override
   Future<ExpertRunDto> get(int runId) async => _run;
   @override
-  Future<List<ExpertRunDto>> listRuns({int? expertId, int limit = 10}) async => [];
+  Future<List<ExpertRunDto>> listRuns({int? expertId, int limit = 10}) async =>
+      [];
   @override
   Future<List<ExpertRunEventDto>> listEvents(int runId) async => [];
   @override
@@ -467,7 +469,8 @@ class _CapturingRunRepo implements ExpertRunRepository {
     createdAt: DateTime(2026),
   );
   @override
-  Future<List<ExpertRunDto>> listRuns({int? expertId, int limit = 10}) async => [];
+  Future<List<ExpertRunDto>> listRuns({int? expertId, int limit = 10}) async =>
+      [];
   @override
   Future<List<ExpertRunEventDto>> listEvents(int runId) async => [];
   @override

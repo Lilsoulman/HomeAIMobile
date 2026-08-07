@@ -9,6 +9,7 @@ import '../features/dashboard/dashboard_repository.dart';
 import '../features/dashboard/dto.dart';
 import '../features/steward/steward_repository.dart';
 import '../widgets/confirmation_section.dart';
+import '../widgets/steward_timeline_tile.dart';
 
 class NexusHomePage extends StatefulWidget {
   const NexusHomePage({super.key});
@@ -142,82 +143,31 @@ class _StewardActivitySection extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionHeading(title: '管家动态'),
+          _SectionHeading(
+            title: '管家动态',
+            action: '查看全部',
+            onAction: () => context.push('/home-plus/timeline'),
+          ),
           const SizedBox(height: 12),
           ...activities
               .take(3)
               .map(
                 (activity) => Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: _ActivityTile(activity: activity),
+                  child: StewardTimelineTile(
+                    category: activity.category,
+                    title: activity.title,
+                    summary: activity.resultSummary,
+                    time: activity.createdAt,
+                    riskLevel: activity.riskLevel,
+                    onTap: () => context.push('/home-plus/timeline'),
+                  ),
                 ),
               ),
         ],
       );
     },
   );
-}
-
-class _ActivityTile extends StatelessWidget {
-  const _ActivityTile({required this.activity});
-
-  final DashboardStewardActivityDto activity;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return NexusSurface(
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              _activityIcon(activity.category),
-              size: 19,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  activity.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleMedium,
-                ),
-                if (activity.resultSummary != null) ...[
-                  const SizedBox(height: 3),
-                  Text(
-                    activity.resultSummary!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            _formatTime(activity.createdAt),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// 家庭概览：聚合视图 Home 与 Scenes 模块，独立降级。
@@ -770,13 +720,6 @@ IconData _dashboardSpaceIcon(String type) => switch (type) {
   'bathroom' => Icons.bathtub_outlined,
   'office' => Icons.computer_outlined,
   _ => Icons.home_outlined,
-};
-
-IconData _activityIcon(String category) => switch (category) {
-  'automation' => Icons.bolt_outlined,
-  'confirmation' => Icons.verified_user_outlined,
-  'expert' => Icons.psychology_outlined,
-  _ => Icons.auto_awesome_outlined,
 };
 
 IconData _sceneIcon(String key) => switch (key) {

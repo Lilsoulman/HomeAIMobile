@@ -122,7 +122,8 @@ class _TravelPageState extends State<TravelPage> {
         final title = decoded['title']?.toString() ?? '';
         final reason = decoded['reason']?.toString() ?? '';
         final tip = decoded['tip']?.toString() ?? '';
-        if (title.isNotEmpty) return '《$title》 $reason ${tip.isNotEmpty ? '小贴士：$tip' : ''}';
+        if (title.isNotEmpty)
+          return '《$title》 $reason ${tip.isNotEmpty ? '小贴士：$tip' : ''}';
       }
     } catch (_) {}
     return null;
@@ -191,13 +192,9 @@ class _TravelPageState extends State<TravelPage> {
               bottom: NexusLayout.bottomContentPadding,
             ),
             children: [
-              NexusPageHeader(
-                title: '周末出行',
-                description: '按你们的偏好，推荐周末自然好去处。',
-              ),
+              NexusPageHeader(title: '周末出行', description: '按你们的偏好，推荐周末自然好去处。'),
               const SizedBox(height: NexusLayout.sectionGap),
-              if (_latestReason != null)
-                _ReasonBanner(text: _latestReason!),
+              if (_latestReason != null) _ReasonBanner(text: _latestReason!),
               const SizedBox(height: NexusLayout.sectionGap),
               if (_loading)
                 const Padding(
@@ -217,13 +214,10 @@ class _TravelPageState extends State<TravelPage> {
               else
                 ..._items.map(
                   (item) => Padding(
-                    padding: const EdgeInsets.only(
-                      bottom: NexusLayout.itemGap,
-                    ),
+                    padding: const EdgeInsets.only(bottom: NexusLayout.itemGap),
                     child: _RecommendationCard(
                       item: item,
-                      onFeedback: (choice) =>
-                          _submitFeedback(item.id, choice),
+                      onFeedback: (choice) => _submitFeedback(item.id, choice),
                     ),
                   ),
                 ),
@@ -351,10 +345,7 @@ class _RecommendationCard extends StatelessWidget {
               Expanded(
                 child: Text(item.name, style: theme.textTheme.titleLarge),
               ),
-              Icon(
-                Icons.landscape_outlined,
-                color: theme.colorScheme.primary,
-              ),
+              Icon(Icons.landscape_outlined, color: theme.colorScheme.primary),
             ],
           ),
           const SizedBox(height: 4),

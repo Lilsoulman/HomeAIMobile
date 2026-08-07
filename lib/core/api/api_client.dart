@@ -192,10 +192,7 @@ class ApiClient {
   }
 
   /// 二进制下载专用：返回原始字节流，不走 JSON 包络解析。
-  Future<Uint8List> download(
-    String path, {
-    Map<String, dynamic>? query,
-  }) async {
+  Future<Uint8List> download(String path, {Map<String, dynamic>? query}) async {
     try {
       final response = await _dio.get<Uint8List>(
         path,

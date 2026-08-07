@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../core/api/api_exception.dart';
@@ -18,25 +19,155 @@ class _HomePlusPageState extends State<HomePlusPage> {
   String? _runningSceneKey;
   String? _selectedSpaceId;
 
+  // 设备健康详情缓存（spaceId -> deviceId -> detail），按空间惰性加载。
+  final Map<String, Map<String, DeviceHealthDetailDto>> _deviceHealthCache = {};
+  String? _healthRequestedSpace;
+
   @override
   void initState() {
     super.initState();
     _reload();
   }
 
-  void _reload() => _data = _load();
+  void _reload() {
+    setState(() {
+      _data = _load();
+    });
+  }
 
   Future<_HomePlusData> _load() async {
     final repository = context.read<SmartHomeRepository>();
+    final spaces = await repository.listSpaces();
     final results = await Future.wait<Object>([
-      repository.listSpaces(),
       repository.listDevices(),
       repository.listScenes(),
+      _fetchSpaceHealth(repository, spaces),
     ]);
     return _HomePlusData(
-      spaces: results[0] as List<SmartHomeSpaceDto>,
-      devices: results[1] as List<SmartHomeDeviceDto>,
-      scenes: results[2] as List<SmartSceneDto>,
+      spaces: spaces,
+      devices: results[0] as List<SmartHomeDeviceDto>,
+      scenes: results[1] as List<SmartSceneDto>,
+      healthBySpace: (results[2] as Map<Object, Object>)
+          .cast<String, DeviceHealthSummaryDto>(),
+    );
+  }
+
+  /// 各空间健康聚合（B10）；单个空间失败时以空摘要兜底，不阻塞页面。
+  Future<Map<String, DeviceHealthSummaryDto>> _fetchSpaceHealth(
+    SmartHomeRepository repository,
+    List<SmartHomeSpaceDto> spaces,
+  ) async {
+    final entries = await Future.wait(
+      spaces.map(
+        (space) async => MapEntry(
+          space.id,
+          await _safe(
+                () => repository.fetchDeviceHealthSummary(spaceId: space.id),
+              ) ??
+              const DeviceHealthSummaryDto(
+                total: 0,
+                healthy: 0,
+                degraded: 0,
+                offline: 0,
+                lowBattery: 0,
+              ),
+        ),
+      ),
+    );
+    return Map.fromEntries(entries);
+  }
+
+  Future<T?> _safe<T>(Future<T> Function() action) async {
+    try {
+      return await action();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 按空间加载设备健康详情（B14，逐设备拉取）；失败项跳过。
+  Future<void> _refreshDeviceHealth(
+    String spaceId,
+    List<SmartHomeDeviceDto> devices,
+  ) async {
+    if (_healthRequestedSpace == spaceId) return;
+    _healthRequestedSpace = spaceId;
+    final repository = context.read<SmartHomeRepository>();
+    final results = await Future.wait(
+      devices.map((device) async {
+        final id = int.tryParse(device.id);
+        if (id == null) return <String, DeviceHealthDetailDto>{};
+        final detail = await _safe(() => repository.fetchDeviceHealth(id));
+        return detail == null
+            ? <String, DeviceHealthDetailDto>{}
+            : <String, DeviceHealthDetailDto>{device.id: detail};
+      }),
+    );
+    final merged = <String, DeviceHealthDetailDto>{};
+    for (final map in results) {
+      merged.addAll(map);
+    }
+    if (!mounted) return;
+    setState(() {
+      _deviceHealthCache[spaceId] = merged;
+      _healthRequestedSpace = null;
+    });
+  }
+
+  /// 打开空间详情：设备健康列表 + 该空间的管家动态入口。
+  /// 返回 true 表示用户请求跳转管家动态页（sheet 关闭后再导航）。
+  Future<bool?> _openSpaceDetail(
+    SmartHomeSpaceDto space,
+    List<SmartHomeDeviceDto> devices,
+    Map<String, DeviceHealthDetailDto> healthById,
+  ) {
+    return showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                space.name,
+                style: Theme.of(sheetContext).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                space.summary,
+                style: Theme.of(sheetContext).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(sheetContext).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (devices.isEmpty)
+                const Text('这个房间还没有已连接的设备。')
+              else
+                ...devices.map(
+                  (device) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _SpaceDetailDeviceRow(
+                      device: device,
+                      health: healthById[device.id],
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.tonalIcon(
+                  onPressed: () => Navigator.of(sheetContext).pop(true),
+                  icon: const Icon(Icons.timeline_rounded),
+                  label: const Text('查看管家动态'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -124,6 +255,16 @@ class _HomePlusPageState extends State<HomePlusPage> {
           final onlineDevices = data.devices
               .where((device) => device.isOnline)
               .length;
+          final currentHealth = _deviceHealthCache[currentSpace.id];
+
+          // 首次展示该空间时惰性加载设备健康详情。
+          if (currentHealth == null && currentDevices.isNotEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                _refreshDeviceHealth(currentSpace.id, currentDevices);
+              }
+            });
+          }
 
           return RefreshIndicator(
             onRefresh: () async {
@@ -156,7 +297,17 @@ class _HomePlusPageState extends State<HomePlusPage> {
                 _RoomImageCard(
                   space: currentSpace,
                   devices: currentDevices,
-                  onTap: () {},
+                  health: data.healthBySpace[currentSpace.id],
+                  onTap: () async {
+                    final goTimeline = await _openSpaceDetail(
+                      currentSpace,
+                      currentDevices,
+                      currentHealth ?? const {},
+                    );
+                    if (goTimeline == true && context.mounted) {
+                      context.push('/home-plus/timeline');
+                    }
+                  },
                 ),
                 if (otherSpaces.isNotEmpty) ...[
                   const SizedBox(height: NexusLayout.sectionGap),
@@ -176,6 +327,7 @@ class _HomePlusPageState extends State<HomePlusPage> {
                                   device.spaceId == otherSpaces[index].id,
                             )
                             .toList(growable: false),
+                        health: data.healthBySpace[otherSpaces[index].id],
                         onTap: () => setState(
                           () => _selectedSpaceId = otherSpaces[index].id,
                         ),
@@ -208,7 +360,10 @@ class _HomePlusPageState extends State<HomePlusPage> {
                   ...currentDevices.map(
                     (device) => Padding(
                       padding: const EdgeInsets.only(bottom: 10),
-                      child: _DeviceStatusCard(device: device),
+                      child: _DeviceStatusCard(
+                        device: device,
+                        health: currentHealth?[device.id],
+                      ),
                     ),
                   ),
               ],
@@ -225,11 +380,15 @@ class _HomePlusData {
     required this.spaces,
     required this.devices,
     required this.scenes,
+    required this.healthBySpace,
   });
 
   final List<SmartHomeSpaceDto> spaces;
   final List<SmartHomeDeviceDto> devices;
   final List<SmartSceneDto> scenes;
+
+  /// 各空间设备健康聚合（spaceId -> 摘要）。
+  final Map<String, DeviceHealthSummaryDto> healthBySpace;
 }
 
 class _RoomFilters extends StatelessWidget {
@@ -313,11 +472,13 @@ class _RoomImageCard extends StatelessWidget {
     required this.space,
     required this.devices,
     required this.onTap,
+    this.health,
   });
 
   final SmartHomeSpaceDto space;
   final List<SmartHomeDeviceDto> devices;
   final VoidCallback onTap;
+  final DeviceHealthSummaryDto? health;
 
   @override
   Widget build(BuildContext context) {
@@ -369,17 +530,23 @@ class _RoomImageCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    Row(
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 8,
                       children: [
                         _RoomStat(
                           icon: Icons.sensors_rounded,
                           label: '$online 在线',
                         ),
-                        const SizedBox(width: 10),
                         _RoomStat(
                           icon: Icons.thermostat_rounded,
                           label: _temperatureLabel(devices),
                         ),
+                        if (_healthBadgeLabel(health) != null)
+                          _RoomStat(
+                            icon: Icons.health_and_safety_outlined,
+                            label: _healthBadgeLabel(health)!,
+                          ),
                       ],
                     ),
                   ],
@@ -398,11 +565,13 @@ class _RoomPreviewCard extends StatelessWidget {
     required this.space,
     required this.devices,
     required this.onTap,
+    this.health,
   });
 
   final SmartHomeSpaceDto space;
   final List<SmartHomeDeviceDto> devices;
   final VoidCallback onTap;
+  final DeviceHealthSummaryDto? health;
 
   @override
   Widget build(BuildContext context) => SizedBox(
@@ -445,6 +614,16 @@ class _RoomPreviewCard extends StatelessWidget {
                       color: const Color(0xFFD4D4D8),
                     ),
                   ),
+                  if (_healthBadgeLabel(health) != null) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      _healthBadgeLabel(health)!,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFFFFD9A8),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -648,9 +827,10 @@ class _SceneActionCard extends StatelessWidget {
 }
 
 class _DeviceStatusCard extends StatelessWidget {
-  const _DeviceStatusCard({required this.device});
+  const _DeviceStatusCard({required this.device, this.health});
 
   final SmartHomeDeviceDto device;
+  final DeviceHealthDetailDto? health;
 
   @override
   Widget build(BuildContext context) {
@@ -689,6 +869,29 @@ class _DeviceStatusCard extends StatelessWidget {
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
+                if (health != null) ...[
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      if (health!.healthStatus != null &&
+                          health!.healthStatus != 'healthy')
+                        _HealthTag(label: health!.healthLabel),
+                      if (health!.isLowBattery)
+                        _HealthTag(label: '低电量 ${health!.batteryLevel}%'),
+                      if (health!.isWeakSignal)
+                        _HealthTag(label: '弱信号 LQI ${health!.signalLqi}'),
+                      if (health!.stateUpdatedAt != null)
+                        Text(
+                          '采样 ${_sampleTime(health!.stateUpdatedAt!)}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -703,6 +906,85 @@ class _DeviceStatusCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 空间详情底部面板中的设备健康行：名称 + 健康语义标签 + 采样时间。
+class _SpaceDetailDeviceRow extends StatelessWidget {
+  const _SpaceDetailDeviceRow({required this.device, this.health});
+
+  final SmartHomeDeviceDto device;
+  final DeviceHealthDetailDto? health;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final active = device.isOnline;
+    return Row(
+      children: [
+        Icon(
+          _deviceIcon(device.type),
+          size: 20,
+          color: active
+              ? theme.colorScheme.primary
+              : theme.colorScheme.onSurfaceVariant,
+        ),
+        const SizedBox(width: 10),
+        Expanded(child: Text(device.name, style: theme.textTheme.titleSmall)),
+        if (health != null && health!.healthStatus != 'healthy') ...[
+          _HealthTag(label: health!.healthLabel),
+          const SizedBox(width: 6),
+        ],
+        if (health?.stateUpdatedAt != null) ...[
+          Text(
+            _sampleTime(health!.stateUpdatedAt!),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(width: 6),
+        ],
+        Icon(
+          active ? Icons.circle : Icons.circle_outlined,
+          size: 10,
+          color: active
+              ? theme.colorScheme.primary
+              : theme.colorScheme.onSurfaceVariant,
+        ),
+      ],
+    );
+  }
+}
+
+/// 设备健康语义标签（颜色走主题 token，不暴露原始数值/协议字段）。
+class _HealthTag extends StatelessWidget {
+  const _HealthTag({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (label) {
+      '状态正常' => NexusPalette.healthHealthy,
+      '性能降级' => NexusPalette.healthDegraded,
+      '电量不足' => NexusPalette.healthLowBattery,
+      _ => NexusPalette.healthOffline,
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -766,6 +1048,22 @@ IconData _sceneIcon(String key) => switch (key) {
   'sleep' => Icons.bedtime_outlined,
   _ => Icons.auto_awesome_outlined,
 };
+
+/// 空间健康徽标文案：有离线/低电量/降级设备时给出语义摘要，否则为 null。
+String? _healthBadgeLabel(DeviceHealthSummaryDto? health) {
+  if (health == null || health.total == 0) return null;
+  final parts = <String>[
+    if (health.offline > 0) '${health.offline} 离线',
+    if (health.lowBattery > 0) '${health.lowBattery} 低电量',
+    if (health.degraded > 0) '${health.degraded} 降级',
+  ];
+  return parts.isEmpty ? null : parts.join(' · ');
+}
+
+String _sampleTime(DateTime dateTime) {
+  final local = dateTime.toLocal();
+  return '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+}
 
 String _temperatureLabel(List<SmartHomeDeviceDto> devices) {
   final climate = devices.where((device) => device.type == 'climate');

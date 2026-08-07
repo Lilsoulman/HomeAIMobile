@@ -28,6 +28,10 @@ import 'features/dashboard/dashboard_repository.dart';
 import 'features/dashboard/http_dashboard_repository.dart';
 import 'features/family/family_repository.dart';
 import 'features/family/http_family_repository.dart';
+import 'features/favorite/favorite_repository.dart';
+import 'features/favorite/http_favorite_repository.dart';
+import 'features/life/http_life_expert_repository.dart';
+import 'features/life/life_expert_repository.dart';
 import 'features/expert/expert_run_repository.dart';
 import 'features/expert/http_expert_repository.dart';
 import 'features/expert/http_expert_run_repository.dart';
@@ -105,6 +109,8 @@ class NexusMindApp extends StatelessWidget {
       homeIdOf: () => auth.tenantId ?? 0,
     );
     final dashboardRepo = HttpDashboardRepository(api);
+    final favoriteRepo = HttpFavoriteRepository(api);
+    final lifeExpertRepo = HttpLifeExpertRepository(api);
 
     return MultiProvider(
       providers: [
@@ -128,6 +134,8 @@ class NexusMindApp extends StatelessWidget {
         Provider<FamilyRepository>.value(value: familyRepo),
         Provider<StewardRepository>.value(value: stewardRepo),
         Provider<DashboardRepository>.value(value: dashboardRepo),
+        Provider<FavoriteRepository>.value(value: favoriteRepo),
+        Provider<LifeExpertRepository>.value(value: lifeExpertRepo),
       ],
       child: _Root(env: env),
     );

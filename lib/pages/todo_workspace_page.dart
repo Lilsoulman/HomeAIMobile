@@ -513,37 +513,40 @@ class _TodoTile extends StatelessWidget {
     final done = todo.status == TodoStatus.completed;
     return NexusSurface(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-      child: ListTile(
-        onTap: onTap,
-        onLongPress: onLongPress,
-        leading: selecting
-            ? Checkbox(value: selected, onChanged: (_) => onTap())
-            : Checkbox(value: done, onChanged: (_) => onToggle()),
-        title: Text(
-          todo.title,
-          style: TextStyle(
-            decoration: done ? TextDecoration.lineThrough : null,
+      child: Material(
+        type: MaterialType.transparency,
+        child: ListTile(
+          onTap: onTap,
+          onLongPress: onLongPress,
+          leading: selecting
+              ? Checkbox(value: selected, onChanged: (_) => onTap())
+              : Checkbox(value: done, onChanged: (_) => onToggle()),
+          title: Text(
+            todo.title,
+            style: TextStyle(
+              decoration: done ? TextDecoration.lineThrough : null,
+            ),
           ),
+          subtitle: Wrap(
+            spacing: 7,
+            runSpacing: 4,
+            children: [
+              if (todo.dueAt != null)
+                _Tag(
+                  text: '截止 ${_dateLabel(todo.dueAt!)}',
+                  icon: Icons.schedule_outlined,
+                ),
+              if (todo.repeatRule != null && todo.repeatRule != 'none')
+                const _Tag(text: '重复', icon: Icons.repeat_rounded),
+              if (todo.remindAt != null)
+                const _Tag(text: '提醒', icon: Icons.notifications_outlined),
+              if (todo.type?.isNotEmpty ?? false) _Tag(text: todo.type!),
+            ],
+          ),
+          trailing: todo.pinned
+              ? const Icon(Icons.push_pin_rounded, size: 18)
+              : null,
         ),
-        subtitle: Wrap(
-          spacing: 7,
-          runSpacing: 4,
-          children: [
-            if (todo.dueAt != null)
-              _Tag(
-                text: '截止 ${_dateLabel(todo.dueAt!)}',
-                icon: Icons.schedule_outlined,
-              ),
-            if (todo.repeatRule != null && todo.repeatRule != 'none')
-              const _Tag(text: '重复', icon: Icons.repeat_rounded),
-            if (todo.remindAt != null)
-              const _Tag(text: '提醒', icon: Icons.notifications_outlined),
-            if (todo.type?.isNotEmpty ?? false) _Tag(text: todo.type!),
-          ],
-        ),
-        trailing: todo.pinned
-            ? const Icon(Icons.push_pin_rounded, size: 18)
-            : null,
       ),
     );
   }

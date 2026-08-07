@@ -105,6 +105,67 @@ void main() {
         expect(scenes.single.lastRunAt, isNull);
       },
     );
+
+    test('maps device health summary and detail endpoints (B10/B14)', () async {
+      final requests = <RequestOptions>[];
+      final repository = await _repository(requests, [
+        {
+          'Total': 3,
+          'Healthy': 1,
+          'Degraded': 1,
+          'Offline': 1,
+          'LowBattery': 1,
+          'DominantStatus': 'degraded',
+        },
+        {
+          'Id': 34,
+          'SpaceId': 12,
+          'Name': '卧室空调',
+          'DeviceType': 'air_conditioner',
+          'OnlineStatus': 'online',
+          'ZigbeeRole': 'router',
+          'BatteryLevel': 15,
+          'SignalLqi': 90,
+          'HealthStatus': 'low_battery',
+          'StateUpdatedAt': '2026-08-04T09:00:00Z',
+        },
+      ]);
+
+      final summary = await repository.fetchDeviceHealthSummary(spaceId: '12');
+      final detail = await repository.fetchDeviceHealth(34);
+
+      expect(summary.total, 3);
+      expect(summary.offline, 1);
+      expect(summary.lowBattery, 1);
+      expect(summary.dominantStatus, 'degraded');
+      expect(detail.id, 34);
+      expect(detail.spaceId, 12);
+      expect(detail.healthStatus, 'low_battery');
+      expect(detail.batteryLevel, 15);
+      expect(detail.isLowBattery, isTrue);
+      expect(detail.isWeakSignal, isFalse);
+      expect(detail.healthLabel, '电量不足');
+      expect(detail.stateUpdatedAt?.toUtc().hour, 9);
+      expect(requests.map((request) => request.path), [
+        '/smart-home/devices/health',
+        '/smart-home/devices/34/health',
+      ]);
+      expect(requests[0].queryParameters, {'spaceId': '12'});
+    });
+
+    test('health detail falls back safely when fields are absent', () async {
+      final repository = await _repository(<RequestOptions>[], [
+        {'Id': 7},
+      ]);
+
+      final detail = await repository.fetchDeviceHealth(7);
+
+      expect(detail.name, isEmpty);
+      expect(detail.healthStatus, isNull);
+      expect(detail.isLowBattery, isFalse);
+      expect(detail.isWeakSignal, isFalse);
+      expect(detail.healthLabel, '已离线');
+    });
   });
 }
 

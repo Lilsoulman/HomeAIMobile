@@ -14,20 +14,22 @@ class TravelRecommendationDto {
     this.reason,
   });
 
-  factory TravelRecommendationDto.fromJson(Map<String, dynamic> json) =>
-      TravelRecommendationDto(
-        id: (json['Id'] ?? json['id'] as num?)?.toInt() ?? 0,
-        name: (json['Name'] ?? json['name'] ?? '').toString(),
-        city: (json['City'] ?? json['city'] ?? '').toString(),
-        category: (json['Category'] ?? json['category'] ?? '').toString(),
-        durationHours:
-            (json['DurationHours'] ?? json['durationHours'] as num?)?.toDouble() ?? 0,
-        costLevel: (json['CostLevel'] ?? json['costLevel'] as num?)?.toInt() ?? 1,
-        weatherTag: (json['WeatherTag'] ?? json['weatherTag'])?.toString(),
-        tags: _asStringList(json['Tags'] ?? json['tags']),
-        description: (json['Description'] ?? json['description'])?.toString(),
-        reason: (json['Reason'] ?? json['reason'])?.toString(),
-      );
+  factory TravelRecommendationDto.fromJson(
+    Map<String, dynamic> json,
+  ) => TravelRecommendationDto(
+    id: (json['Id'] ?? json['id'] as num?)?.toInt() ?? 0,
+    name: (json['Name'] ?? json['name'] ?? '').toString(),
+    city: (json['City'] ?? json['city'] ?? '').toString(),
+    category: (json['Category'] ?? json['category'] ?? '').toString(),
+    durationHours:
+        (json['DurationHours'] ?? json['durationHours'] as num?)?.toDouble() ??
+        0,
+    costLevel: (json['CostLevel'] ?? json['costLevel'] as num?)?.toInt() ?? 1,
+    weatherTag: (json['WeatherTag'] ?? json['weatherTag'])?.toString(),
+    tags: _asStringList(json['Tags'] ?? json['tags']),
+    description: (json['Description'] ?? json['description'])?.toString(),
+    reason: (json['Reason'] ?? json['reason'])?.toString(),
+  );
 
   final int id;
   final String name;

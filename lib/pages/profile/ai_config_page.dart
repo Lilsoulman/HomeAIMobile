@@ -144,12 +144,12 @@ class _AiConfigPageState extends State<AiConfigPage> {
       subtitle: const Text('关闭后 AI 生成功能不可用'),
     ),
     const SizedBox(height: 4),
-    _InfoTile(icon: Icons.dns_outlined, label: 'Endpoint', value: _endpoint.text),
     _InfoTile(
-      icon: Icons.smart_toy_outlined,
-      label: '模型',
-      value: _model.text,
+      icon: Icons.dns_outlined,
+      label: 'Endpoint',
+      value: _endpoint.text,
     ),
+    _InfoTile(icon: Icons.smart_toy_outlined, label: '模型', value: _model.text),
     _InfoTile(
       icon: Icons.thermostat_outlined,
       label: '温度',

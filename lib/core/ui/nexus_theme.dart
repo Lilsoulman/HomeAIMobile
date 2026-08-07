@@ -16,6 +16,17 @@ abstract final class NexusPalette {
   static const darkTextTertiary = Color(0xFF71717A);
   static const lightOutline = Color(0xFFE3E5E8);
   static const darkOutline = Color(0x1AFFFFFF);
+
+  // 风险等级语义色（P5）：L1 低风险 / L2 建议确认 / L3 需你决定。
+  static const riskL1 = Color(0xFF2E9E6B);
+  static const riskL2 = Color(0xFFE0862D);
+  static const riskL3 = Color(0xFFD64545);
+
+  // 设备健康语义色（P5）：正常 / 降级 / 低电量 / 离线。
+  static const healthHealthy = Color(0xFF2E9E6B);
+  static const healthDegraded = Color(0xFFE0862D);
+  static const healthLowBattery = Color(0xFFD64545);
+  static const healthOffline = Color(0xFF8E8E93);
 }
 
 abstract final class NexusLayout {

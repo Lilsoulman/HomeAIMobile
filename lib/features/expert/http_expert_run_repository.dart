@@ -45,10 +45,7 @@ class HttpExpertRunRepository implements ExpertRunRepository {
     final raw = await _api.request<dynamic>(
       method: 'GET',
       path: '/expert-runs',
-      query: {
-        if (expertId != null) 'expertId': expertId,
-        'limit': limit,
-      },
+      query: {if (expertId != null) 'expertId': expertId, 'limit': limit},
       parseData: (value) => value,
     );
     if (raw is! List) return const [];

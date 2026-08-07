@@ -23,9 +23,13 @@ import 'pages/confirmation_center_page.dart';
 import 'pages/connector_center_page.dart';
 import 'pages/daily_knowledge_page.dart';
 import 'pages/expert_workbench_page.dart';
+import 'pages/life_recommend_page.dart';
+import 'pages/life_trip_page.dart';
 import 'pages/family/family_knowledge_page.dart';
 import 'pages/family/family_members_page.dart';
 import 'pages/plan_page.dart';
+import 'pages/profile/favorites_page.dart';
+import 'pages/steward_timeline_page.dart';
 import 'pages/travel_page.dart';
 import 'pages/todo_workspace_page.dart';
 
@@ -93,6 +97,14 @@ GoRouter buildAppRouter({
                     ),
                   ),
                   GoRoute(
+                    path: 'life-recommend',
+                    builder: (_, _) => const LifeRecommendPage(),
+                  ),
+                  GoRoute(
+                    path: 'life-trip',
+                    builder: (_, _) => const LifeTripPage(),
+                  ),
+                  GoRoute(
                     path: ':expertId',
                     builder: (context, state) {
                       final sourceType =
@@ -148,6 +160,12 @@ GoRouter buildAppRouter({
                 path: '/home-plus',
                 pageBuilder: (_, _) =>
                     const NoTransitionPage(child: HomePlusPage()),
+                routes: [
+                  GoRoute(
+                    path: 'timeline',
+                    builder: (_, _) => const StewardTimelinePage(),
+                  ),
+                ],
               ),
             ],
           ),
@@ -174,6 +192,10 @@ GoRouter buildAppRouter({
                   GoRoute(
                     path: 'family-knowledge',
                     builder: (_, _) => const FamilyKnowledgePage(),
+                  ),
+                  GoRoute(
+                    path: 'favorites',
+                    builder: (_, _) => const FavoritesPage(),
                   ),
                 ],
               ),

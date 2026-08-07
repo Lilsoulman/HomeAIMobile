@@ -66,7 +66,9 @@ class _DailyKnowledgePageState extends State<DailyKnowledgePage> {
         query: _expertCode,
       );
       if (mounted) {
-        setState(() => _knowledgeExpert = experts.isEmpty ? null : experts.first);
+        setState(
+          () => _knowledgeExpert = experts.isEmpty ? null : experts.first,
+        );
       }
     } catch (_) {}
     await _reloadRuns();
@@ -83,10 +85,11 @@ class _DailyKnowledgePageState extends State<DailyKnowledgePage> {
         _error = null;
       });
     } catch (_) {
-      if (mounted) setState(() {
-        _loadingRuns = false;
-        _error = '历史记录加载失败，请稍后重试。';
-      });
+      if (mounted)
+        setState(() {
+          _loadingRuns = false;
+          _error = '历史记录加载失败，请稍后重试。';
+        });
     }
   }
 
@@ -197,10 +200,7 @@ class _DailyKnowledgePageState extends State<DailyKnowledgePage> {
               bottom: NexusLayout.bottomContentPadding,
             ),
             children: [
-              NexusPageHeader(
-                title: '每日知识',
-                description: '每天一条新知识，晨会灵感随手取。',
-              ),
+              NexusPageHeader(title: '每日知识', description: '每天一条新知识，晨会灵感随手取。'),
               const SizedBox(height: NexusLayout.sectionGap),
               _latestCard(),
               const SizedBox(height: NexusLayout.sectionGap),
@@ -223,9 +223,7 @@ class _DailyKnowledgePageState extends State<DailyKnowledgePage> {
     if (card == null) {
       return NexusSurface(
         padding: const EdgeInsets.all(20),
-        child: Text(
-          _loadingRuns ? '正在加载…' : '还没有知识卡片，点击下方按钮生成第一张。',
-        ),
+        child: Text(_loadingRuns ? '正在加载…' : '还没有知识卡片，点击下方按钮生成第一张。'),
       );
     }
     final topic = card['topic']?.toString() ?? '';
@@ -287,9 +285,7 @@ class _DailyKnowledgePageState extends State<DailyKnowledgePage> {
     if (expert == null) {
       return NexusSurface(
         padding: const EdgeInsets.all(20),
-        child: Text(
-          _error ?? '未找到每日知识管家，请先应用数据库种子脚本。',
-        ),
+        child: Text(_error ?? '未找到每日知识管家，请先应用数据库种子脚本。'),
       );
     }
     return FilledButton.icon(
@@ -324,20 +320,23 @@ class _DailyKnowledgePageState extends State<DailyKnowledgePage> {
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 14),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.schedule_rounded),
-            title: Text('推送时间：${_pushTime.format(context)}'),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () async {
-              final picked = await showTimePicker(
-                context: context,
-                initialTime: _pushTime,
-              );
-              if (picked != null && mounted) {
-                setState(() => _pushTime = picked);
-              }
-            },
+          Material(
+            type: MaterialType.transparency,
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.schedule_rounded),
+              title: Text('推送时间：${_pushTime.format(context)}'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () async {
+                final picked = await showTimePicker(
+                  context: context,
+                  initialTime: _pushTime,
+                );
+                if (picked != null && mounted) {
+                  setState(() => _pushTime = picked);
+                }
+              },
+            ),
           ),
           const SizedBox(height: 6),
           Wrap(

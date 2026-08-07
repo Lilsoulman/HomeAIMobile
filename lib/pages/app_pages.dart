@@ -378,6 +378,17 @@ class ProfilePage extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/me/family-knowledge'),
           ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 24, 16, 4),
+            child: Text('个人', style: TextStyle(fontWeight: FontWeight.w600)),
+          ),
+          ListTile(
+            leading: const Icon(Icons.favorite_outline),
+            title: const Text('我的收藏'),
+            subtitle: const Text('管理你的餐厅、旅行与素材偏好'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/me/favorites'),
+          ),
           ListTile(
             leading: const Icon(Icons.hub_outlined),
             title: const Text('连接服务'),

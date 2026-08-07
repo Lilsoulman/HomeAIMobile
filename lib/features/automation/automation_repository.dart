@@ -20,7 +20,8 @@ class AutomationRuleDto {
           ? trigger.cast<String, dynamic>()
           : <String, dynamic>{},
       actions: actions is List ? actions : const [],
-      rowVersion: (json['RowVersion'] ?? json['rowVersion'] as num?)?.toInt() ?? 1,
+      rowVersion:
+          (json['RowVersion'] ?? json['rowVersion'] as num?)?.toInt() ?? 1,
       enabled: (json['Enabled'] ?? json['enabled'] ?? true) == true,
     );
   }

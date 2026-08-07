@@ -12,12 +12,14 @@ class AiConfig {
   factory AiConfig.fromJson(Map<String, dynamic> json) => AiConfig(
     endpoint: (json['Endpoint'] ?? json['endpoint'])?.toString(),
     model: (json['Model'] ?? json['model'])?.toString(),
-    temperature: ((json['Temperature'] ?? json['temperature']) as num?)
-            ?.toDouble() ??
+    temperature:
+        ((json['Temperature'] ?? json['temperature']) as num?)?.toDouble() ??
         .7,
     hasApiKey:
         ((json['HasApiKey'] ?? json['hasApiKey']) as bool?) ??
-        (((json['ApiKeyMasked'] ?? json['apiKeyMasked'])?.toString().isNotEmpty ??
+        (((json['ApiKeyMasked'] ?? json['apiKeyMasked'])
+                ?.toString()
+                .isNotEmpty ??
             false)),
     enabled: (json['Enabled'] ?? json['enabled'] ?? true) == true,
   );
