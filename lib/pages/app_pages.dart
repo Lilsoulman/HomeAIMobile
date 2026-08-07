@@ -383,6 +383,13 @@ class ProfilePage extends StatelessWidget {
             child: Text('个人', style: TextStyle(fontWeight: FontWeight.w600)),
           ),
           ListTile(
+            leading: const Icon(Icons.smart_toy_outlined),
+            title: const Text('我的专家'),
+            subtitle: const Text('创建与管理个人专属专家'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/me/my-experts'),
+          ),
+          ListTile(
             leading: const Icon(Icons.favorite_outline),
             title: const Text('我的收藏'),
             subtitle: const Text('管理你的餐厅、旅行与素材偏好'),

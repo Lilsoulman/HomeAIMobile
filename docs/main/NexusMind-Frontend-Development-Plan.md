@@ -5,7 +5,7 @@
 > **计划性质：** 当前实施快照。只维护已完成和下一步，不保留迭代历史，也不改变产品或接口契约。
 
 最近同步：2026-08-07
-当前目标：在服务端 V2.2（B9-B14）、V2.3 个人生活专家（B15-B17）与 V2.4（B18/B19）契约已发布的前提下，已交付家庭协同数据层、管家工作台、设置、能力/家庭状态、个人生活专家（收藏管理、探店翻牌、行程规划与日历同步）、MCP 边界静态审计与 V2.4 我的连接；计划内全部交付完成，待产品决策下一迭代。
+当前目标：在服务端 V2.2（B9-B14）、V2.3 个人生活专家（B15-B17）、V2.4（B18/B19）与 B20 专家会话/B21 自建专家契约已发布的前提下，已交付家庭协同数据层、管家工作台、设置、能力/家庭状态、个人生活专家（收藏管理、探店翻牌、行程规划与日历同步）、MCP 边界静态审计、V2.4 我的连接与 B20/B21 专家会话/自建专家；计划内全部交付完成，待产品决策下一迭代。
 
 ## 1. 不变基线
 
@@ -37,10 +37,11 @@
 | P6 质量与 API 联调 | 已完成 | 新增收藏/生活专家 HTTP 映射、错误与页面 Widget 测试；`dart format lib/ test/`、`flutter analyze lib/`（无新增告警）、`flutter test --no-pub` 全量 117/117 通过 |
 | P7 MCP 边界静态审计 | 已完成 | `lib/`、`pubspec.yaml`、android/ios 配置与日志均无 MCP stdio/SQLite 客户端引用；`NEXUSMIND_ACCESS_TOKEN`/`NEXUSMIND_MCP_ALLOW_SENSITIVE` 仅存在于 docs 约束描述，代码与配置零引用；`env/.env` 仅含 `API_BASE_URL` 单键；路由与 features/ 无本地 Agent 缓存页面、路由或 Repository |
 | P8 V2.4 我的连接 | 已完成 | `ConnectorDto` 新增 `BindingScope`/`IsCurrentUserOwner`（家庭/个人 scope 状态，personal 实例从家庭区块剔除）；`ConnectorRepository` 新增 B18 三端点（创建/查询/撤销授权会话）与 B19 汇总（`GET /connector-authorizations/my`），`AuthorizationSessionDto`/`PersonalConnectionSummaryDto` 按契约映射；连接中心页新增「我的个人连接」区块（pending 未过期「等待完成授权」/过期「重新授权」/connected「断开」/revoked「重新授权」，按 §8.26 语义），授权流程 = 创建会话 → `url_launcher` 系统浏览器打开 `AuthorizationUrl` → 3s 轮询会话状态 + 回前台立即补查 → 终态/过期/退出停止；撤销走确认弹窗与幂等 DELETE；`redirectUri` 固定常量 `https://app.example.com/callback`（服务端须配置 `ConnectorOAuth:AllowedRedirectUris` 白名单，否则 422）；DTO 不定义任何 token/credentialRef/回调字段，跨成员隔离由服务端 `/my` 过滤保证；新增 HTTP 与页面 Widget 测试（Fake UrlLauncherPlatform），`dart format`/`flutter analyze`（无新增告警）/`flutter test` 128/128 全绿 |
+| P9 B20 专家会话 + B21 自建专家 | 已完成 | 按 §8.27/§8.28 契约：新建 `lib/features/conversation/`（`ConversationDto`/`MessageDto`/双游标分页 DTO/`SendMessageResultDto` + Repository/HTTP 六端点，会话 PUT 显式 `expertId: null` 解绑、409 乐观锁）；`conversations_page.dart` 会话列表（游标分页/新建/重命名/软删确认）；`conversation_detail_page.dart` 聊天页（消息流 + 发送幂等键、提交中禁用、未绑定 422 提示、发送后轮询 ExpertRun 七态、终态停轮询并刷新消息，客户端不缓存会话上下文、不渲染 prompt/思考链）；`expert_picker_dialog.dart` 选专家（scope=all 按 `Source` 分组展示基础/我的）；`ExpertRepository` 扩展 `scope` 参数与 `getExpertDetail`/`createExpert`/`updateExpert`（rowVersion 冲突 409）/`deleteExpert`，目录列表项新增 `Source` 映射；`my_experts_page.dart` 我的专家（scope=mine 列表 + 新建/编辑表单同页切换：必填校验、toolPolicyJson 本地 JSON 校验、详情回填、删除二次确认）；能力中心新增「专家会话」入口，Profile 新增「我的专家」入口；新增 HTTP 与页面 Widget 测试，`dart format`/`flutter analyze`（无新增告警）/`flutter test` 159/159 全绿 |
 
 ## 3. 下一步
 
-计划内交付已全部完成，无待交付项。服务端 B20 专家会话 / B21 自建专家契约已发布，是否纳入移动端范围待产品总设计决策。
+计划内交付已全部完成，无待交付项。服务端 B22 智能家居场景模板（`smart_home.write` 预注册）等后续契约是否纳入移动端范围待产品总设计决策。
 
 ## 4. 范围与门禁
 

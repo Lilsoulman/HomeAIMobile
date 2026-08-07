@@ -352,7 +352,43 @@ class _StubExpertRepo implements ExpertRepository {
   );
 
   @override
-  Future<List<Expert>> listExperts({String query = ''}) async => [];
+  Future<List<Expert>> listExperts({String query = '', String? scope}) async =>
+      [];
+
+  @override
+  Future<ExpertDetail?> getExpertDetail(
+    String id, {
+    required ExpertSourceType sourceType,
+  }) async => null;
+
+  @override
+  Future<Expert> createExpert({
+    required String name,
+    required String category,
+    String description = '',
+    required String persona,
+    String methodology = '',
+    required String promptTemplate,
+    String toolPolicyJson = '{"skills":[]}',
+    int estimatedCredits = 1,
+  }) async => throw UnimplementedError();
+
+  @override
+  Future<Expert> updateExpert({
+    required String id,
+    required int rowVersion,
+    required String name,
+    required String category,
+    String description = '',
+    required String persona,
+    String methodology = '',
+    required String promptTemplate,
+    String toolPolicyJson = '{"skills":[]}',
+    int estimatedCredits = 1,
+  }) async => throw UnimplementedError();
+
+  @override
+  Future<void> deleteExpert(String id) async {}
 }
 
 class _StubRunRepo implements ExpertRunRepository {

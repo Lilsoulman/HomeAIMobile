@@ -76,6 +76,11 @@ class _ExpertCatalogPageState extends State<ExpertCatalogPage> {
                         icon: const Icon(Icons.luggage_outlined),
                       ),
                       IconButton(
+                        tooltip: '专家会话',
+                        onPressed: () => context.push('/ai/conversations'),
+                        icon: const Icon(Icons.chat_bubble_outline),
+                      ),
+                      IconButton(
                         tooltip: '刷新专家',
                         onPressed: _reload,
                         icon: const Icon(Icons.refresh_rounded),

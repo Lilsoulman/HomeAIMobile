@@ -24,6 +24,8 @@ import 'features/calendar/calendar_repository.dart';
 import 'features/calendar/http_calendar_repository.dart';
 import 'features/connector/connector_repository.dart';
 import 'features/connector/http_connector_repository.dart';
+import 'features/conversation/conversation_repository.dart';
+import 'features/conversation/http_conversation_repository.dart';
 import 'features/dashboard/dashboard_repository.dart';
 import 'features/dashboard/http_dashboard_repository.dart';
 import 'features/family/family_repository.dart';
@@ -111,6 +113,7 @@ class NexusMindApp extends StatelessWidget {
     final dashboardRepo = HttpDashboardRepository(api);
     final favoriteRepo = HttpFavoriteRepository(api);
     final lifeExpertRepo = HttpLifeExpertRepository(api);
+    final conversationRepo = HttpConversationRepository(api);
 
     return MultiProvider(
       providers: [
@@ -136,6 +139,7 @@ class NexusMindApp extends StatelessWidget {
         Provider<DashboardRepository>.value(value: dashboardRepo),
         Provider<FavoriteRepository>.value(value: favoriteRepo),
         Provider<LifeExpertRepository>.value(value: lifeExpertRepo),
+        Provider<ConversationRepository>.value(value: conversationRepo),
       ],
       child: _Root(env: env),
     );

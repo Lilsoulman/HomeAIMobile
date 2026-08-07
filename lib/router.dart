@@ -21,10 +21,13 @@ import 'pages/auth/login_page.dart';
 import 'pages/calendar_workspace_page.dart';
 import 'pages/confirmation_center_page.dart';
 import 'pages/connector_center_page.dart';
+import 'pages/conversation_detail_page.dart';
+import 'pages/conversations_page.dart';
 import 'pages/daily_knowledge_page.dart';
 import 'pages/expert_workbench_page.dart';
 import 'pages/life_recommend_page.dart';
 import 'pages/life_trip_page.dart';
+import 'pages/my_experts_page.dart';
 import 'pages/family/family_knowledge_page.dart';
 import 'pages/family/family_members_page.dart';
 import 'pages/plan_page.dart';
@@ -103,6 +106,21 @@ GoRouter buildAppRouter({
                   GoRoute(
                     path: 'life-trip',
                     builder: (_, _) => const LifeTripPage(),
+                  ),
+                  GoRoute(
+                    path: 'conversations',
+                    builder: (_, _) => const ConversationsPage(),
+                  ),
+                  GoRoute(
+                    path: 'conversations/:conversationId',
+                    builder: (_, state) => ConversationDetailPage(
+                      conversationId:
+                          int.tryParse(
+                            state.pathParameters['conversationId'] ?? '',
+                          ) ??
+                          0,
+                      title: state.uri.queryParameters['title'],
+                    ),
                   ),
                   GoRoute(
                     path: ':expertId',
@@ -196,6 +214,10 @@ GoRouter buildAppRouter({
                   GoRoute(
                     path: 'favorites',
                     builder: (_, _) => const FavoritesPage(),
+                  ),
+                  GoRoute(
+                    path: 'my-experts',
+                    builder: (_, _) => const MyExpertsPage(),
                   ),
                 ],
               ),
