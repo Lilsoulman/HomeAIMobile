@@ -5,7 +5,7 @@
 > **计划性质：** 当前实施快照。只维护已完成和下一步，不保留迭代历史，也不改变产品或接口契约。
 
 最近同步：2026-08-07
-当前目标：在服务端 V2.2（B9-B14）与 V2.3 个人生活专家（B15-B17）契约已发布的前提下，已交付家庭协同数据层、管家工作台、设置、能力/家庭状态、个人生活专家（收藏管理、探店翻牌、行程规划与日历同步）与 MCP 边界静态审计；待交付 V2.4 我的连接（依赖 B18/B19 契约发布）。
+当前目标：在服务端 V2.2（B9-B14）、V2.3 个人生活专家（B15-B17）与 V2.4（B18/B19）契约已发布的前提下，已交付家庭协同数据层、管家工作台、设置、能力/家庭状态、个人生活专家（收藏管理、探店翻牌、行程规划与日历同步）、MCP 边界静态审计与 V2.4 我的连接；计划内全部交付完成，待产品决策下一迭代。
 
 ## 1. 不变基线
 
@@ -36,12 +36,11 @@
 | P5c 个人生活专家：翻牌与行程 | 已完成 | `LifeExpertRepository` 按 B16/B17 契约实现（`POST /api/v1/experts/personal-life-expert/runs`，recommend/plan 同步返回 + `calendar_create_event` confirm 幂等键，Data.Id 作 runId、缺失时确认安全降级）；能力中心新增翻牌/行程入口；`life_recommend_page.dart`（时间/位置/口味 → 建议卡，不渲染提示或思考链）与 `life_trip_page.dart`（目的地/天数 → 每日安排 + L1 确认影响范围展示、提交中禁用、确认后日历同步提示）；用例通过，`flutter test` 117/117 全绿 |
 | P6 质量与 API 联调 | 已完成 | 新增收藏/生活专家 HTTP 映射、错误与页面 Widget 测试；`dart format lib/ test/`、`flutter analyze lib/`（无新增告警）、`flutter test --no-pub` 全量 117/117 通过 |
 | P7 MCP 边界静态审计 | 已完成 | `lib/`、`pubspec.yaml`、android/ios 配置与日志均无 MCP stdio/SQLite 客户端引用；`NEXUSMIND_ACCESS_TOKEN`/`NEXUSMIND_MCP_ALLOW_SENSITIVE` 仅存在于 docs 约束描述，代码与配置零引用；`env/.env` 仅含 `API_BASE_URL` 单键；路由与 features/ 无本地 Agent 缓存页面、路由或 Repository |
+| P8 V2.4 我的连接 | 已完成 | `ConnectorDto` 新增 `BindingScope`/`IsCurrentUserOwner`（家庭/个人 scope 状态，personal 实例从家庭区块剔除）；`ConnectorRepository` 新增 B18 三端点（创建/查询/撤销授权会话）与 B19 汇总（`GET /connector-authorizations/my`），`AuthorizationSessionDto`/`PersonalConnectionSummaryDto` 按契约映射；连接中心页新增「我的个人连接」区块（pending 未过期「等待完成授权」/过期「重新授权」/connected「断开」/revoked「重新授权」，按 §8.26 语义），授权流程 = 创建会话 → `url_launcher` 系统浏览器打开 `AuthorizationUrl` → 3s 轮询会话状态 + 回前台立即补查 → 终态/过期/退出停止；撤销走确认弹窗与幂等 DELETE；`redirectUri` 固定常量 `https://app.example.com/callback`（服务端须配置 `ConnectorOAuth:AllowedRedirectUris` 白名单，否则 422）；DTO 不定义任何 token/credentialRef/回调字段，跨成员隔离由服务端 `/my` 过滤保证；新增 HTTP 与页面 Widget 测试（Fake UrlLauncherPlatform），`dart format`/`flutter analyze`（无新增告警）/`flutter test` 128/128 全绿 |
 
 ## 3. 下一步
 
-| 优先级 | 交付 | 前置条件 | 最小验收 |
-| --- | --- | --- | --- |
-| P8 | V2.4 我的连接 | B18/B19 字段、OAuth 状态与撤销契约发布 | 家庭/个人 scope 状态、个人授权发起/完成/过期/撤销、跨成员不泄露、无 Token 落端测试通过；不提供家庭级密钥或成员授权配置。 |
+计划内交付已全部完成，无待交付项。服务端 B20 专家会话 / B21 自建专家契约已发布，是否纳入移动端范围待产品总设计决策。
 
 ## 4. 范围与门禁
 

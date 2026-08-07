@@ -1,10 +1,14 @@
-// Connector HTTP 实现，严格按 8.14 契约。
+// Connector HTTP 实现，严格按 8.14 / 8.14.1(B18) / 8.26(B19) 契约。
 
 import '../../../core/api/api_client.dart';
 import 'connector_repository.dart';
 
 class HttpConnectorRepository implements ConnectorRepository {
   HttpConnectorRepository(this._api);
+
+  // 服务端须配置 ConnectorOAuth:AllowedRedirectUris 包含该值，否则创建
+  // 授权会话返回 422+10001。
+  static const _redirectUri = 'https://app.example.com/callback';
 
   final ApiClient _api;
 
@@ -83,6 +87,63 @@ class HttpConnectorRepository implements ConnectorRepository {
       throw StateError('发现 Connector 失败：响应不是 JSON 对象');
     }
     return ConnectorDto.fromJson(raw.cast<String, dynamic>());
+  }
+
+  @override
+  Future<AuthorizationSessionDto> createAuthorizationSession(
+    String providerCode,
+  ) async {
+    final raw = await _api.request<dynamic>(
+      method: 'POST',
+      path: '/connector-providers/$providerCode/authorizations',
+      body: {'redirectUri': _redirectUri},
+      parseData: (value) => value,
+    );
+    if (raw is! Map) {
+      throw StateError('创建授权会话失败：响应不是 JSON 对象');
+    }
+    return AuthorizationSessionDto.fromJson(raw.cast<String, dynamic>());
+  }
+
+  @override
+  Future<AuthorizationSessionDto> fetchAuthorizationSession(
+    int sessionId,
+  ) async {
+    final raw = await _api.request<dynamic>(
+      method: 'GET',
+      path: '/connector-authorizations/$sessionId',
+      parseData: (value) => value,
+    );
+    if (raw is! Map) {
+      throw StateError('查询授权会话失败：响应不是 JSON 对象');
+    }
+    return AuthorizationSessionDto.fromJson(raw.cast<String, dynamic>());
+  }
+
+  @override
+  Future<void> revokeAuthorization(int sessionId) async {
+    await _api.request<dynamic>(
+      method: 'DELETE',
+      path: '/connector-authorizations/$sessionId',
+      parseData: (value) => value,
+    );
+  }
+
+  @override
+  Future<List<PersonalConnectionSummaryDto>> listMyPersonalConnections() async {
+    final raw = await _api.request<dynamic>(
+      method: 'GET',
+      path: '/connector-authorizations/my',
+      parseData: (value) => value,
+    );
+    return _asList(raw)
+        .whereType<Map>()
+        .map(
+          (item) => PersonalConnectionSummaryDto.fromJson(
+            item.cast<String, dynamic>(),
+          ),
+        )
+        .toList(growable: false);
   }
 
   @override
