@@ -80,6 +80,65 @@ void main() {
     expect(find.text('L2'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, '确认'), findsOneWidget);
   });
+
+  testWidgets('plan presents confirmed trip events on a timeline', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          Provider<TodoRepository>.value(value: _StubTodoRepo()),
+          Provider<CalendarRepository>.value(
+            value: _StubCalendarRepo(
+              events: [
+                _event('成都 行程 D1', _now.add(const Duration(days: 1))),
+                _event('成都 行程 D2', _now.add(const Duration(days: 2))),
+              ],
+            ),
+          ),
+          Provider<StewardRepository>.value(value: _StubStewardRepo(items: [])),
+        ],
+        child: MaterialApp(
+          theme: NexusTheme.light(NexusPalette.aiAccent),
+          home: const PlanPage(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.text('旅行'));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('成都'), findsOneWidget);
+    expect(find.text('行程安排'), findsOneWidget);
+    expect(find.text('成都 行程 D1'), findsOneWidget);
+    expect(find.text('成都 行程 D2'), findsOneWidget);
+  });
+
+  testWidgets('trip view provides a creation action without trip events', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          Provider<TodoRepository>.value(value: _StubTodoRepo()),
+          Provider<CalendarRepository>.value(value: _StubCalendarRepo()),
+          Provider<StewardRepository>.value(value: _StubStewardRepo(items: [])),
+        ],
+        child: MaterialApp(
+          theme: NexusTheme.light(NexusPalette.aiAccent),
+          home: const PlanPage(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.text('旅行'));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('还没有旅行计划'), findsOneWidget);
+    expect(find.text('创建旅行计划'), findsOneWidget);
+  });
 }
 
 class _StubTodoRepo implements TodoRepository {
@@ -169,11 +228,15 @@ class _StubTodoRepo implements TodoRepository {
 }
 
 class _StubCalendarRepo implements CalendarRepository {
+  _StubCalendarRepo({this.events = const []});
+
+  final List<CalendarEventDto> events;
+
   @override
   Future<List<CalendarEventDto>> listEvents({
     DateTime? from,
     DateTime? to,
-  }) async => [];
+  }) async => events;
 
   @override
   Future<CalendarEventDto> createEvent({
@@ -250,6 +313,17 @@ class _StubCalendarRepo implements CalendarRepository {
   @override
   Future<void> deleteSubscription(int id) async {}
 }
+
+CalendarEventDto _event(String title, DateTime startAt) => CalendarEventDto(
+  id: startAt.millisecondsSinceEpoch,
+  title: title,
+  startAt: startAt,
+  timezone: 'Asia/Shanghai',
+  allDay: true,
+  opacity: 1,
+  createdAt: _now,
+  updatedAt: _now,
+);
 
 class _StubStewardRepo implements StewardRepository {
   _StubStewardRepo({required this.items});

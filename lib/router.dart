@@ -35,6 +35,10 @@ import 'pages/profile/favorites_page.dart';
 import 'pages/steward_timeline_page.dart';
 import 'pages/travel_page.dart';
 import 'pages/todo_workspace_page.dart';
+import 'pages/finance_page.dart';
+import 'pages/courier_page.dart';
+import 'pages/pet_page.dart';
+import 'pages/family_schedule_page.dart';
 
 GoRouter buildAppRouter({
   required AuthController auth,
@@ -182,6 +186,20 @@ GoRouter buildAppRouter({
                   GoRoute(
                     path: 'timeline',
                     builder: (_, _) => const StewardTimelinePage(),
+                  ),
+                  GoRoute(
+                    path: 'finance',
+                    builder: (context, _) =>
+                        FinancePage(key: const ValueKey('finance')),
+                  ),
+                  GoRoute(
+                    path: 'courier',
+                    builder: (_, _) => const CourierPage(),
+                  ),
+                  GoRoute(path: 'pets', builder: (_, _) => const PetPage()),
+                  GoRoute(
+                    path: 'schedule',
+                    builder: (_, _) => const FamilySchedulePage(),
                   ),
                 ],
               ),

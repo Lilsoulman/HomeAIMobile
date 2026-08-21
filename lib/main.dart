@@ -46,6 +46,14 @@ import 'features/smart_home/http_smart_home_repository.dart';
 import 'features/smart_home/smart_home_repository.dart';
 import 'features/todo/http_todo_repository.dart';
 import 'features/todo/todo_repository.dart';
+import 'features/finance/finance_repository.dart';
+import 'features/finance/http_finance_repository.dart';
+import 'features/courier/courier_repository.dart';
+import 'features/courier/http_courier_repository.dart';
+import 'features/pet/pet_repository.dart';
+import 'features/pet/http_pet_repository.dart';
+import 'features/family_schedule/family_schedule_repository.dart';
+import 'features/family_schedule/http_family_schedule_repository.dart';
 import 'router.dart';
 
 Future<void> main() async {
@@ -114,6 +122,19 @@ class NexusMindApp extends StatelessWidget {
     final favoriteRepo = HttpFavoriteRepository(api);
     final lifeExpertRepo = HttpLifeExpertRepository(api);
     final conversationRepo = HttpConversationRepository(api);
+    final financeRepo = HttpFinanceRepository(
+      api,
+      homeIdOf: () => auth.tenantId ?? 0,
+    );
+    final courierRepo = HttpCourierRepository(
+      api,
+      homeIdOf: () => auth.tenantId ?? 0,
+    );
+    final petRepo = HttpPetRepository(api, homeIdOf: () => auth.tenantId ?? 0);
+    final familyScheduleRepo = HttpFamilyScheduleRepository(
+      api,
+      homeIdOf: () => auth.tenantId ?? 0,
+    );
 
     return MultiProvider(
       providers: [
@@ -140,6 +161,10 @@ class NexusMindApp extends StatelessWidget {
         Provider<FavoriteRepository>.value(value: favoriteRepo),
         Provider<LifeExpertRepository>.value(value: lifeExpertRepo),
         Provider<ConversationRepository>.value(value: conversationRepo),
+        Provider<FinanceRepository>.value(value: financeRepo),
+        Provider<CourierRepository>.value(value: courierRepo),
+        Provider<PetRepository>.value(value: petRepo),
+        Provider<FamilyScheduleRepository>.value(value: familyScheduleRepo),
       ],
       child: _Root(env: env),
     );

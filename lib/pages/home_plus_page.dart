@@ -222,6 +222,21 @@ class _HomePlusPageState extends State<HomePlusPage> {
       title: const Text('家庭'),
       actions: [
         IconButton.filledTonal(
+          tooltip: '家庭财务',
+          onPressed: () => context.push('/home-plus/finance'),
+          icon: const Icon(Icons.account_balance_wallet_outlined),
+        ),
+        IconButton.filledTonal(
+          tooltip: '快递管家',
+          onPressed: () => context.push('/home-plus/courier'),
+          icon: const Icon(Icons.local_shipping_outlined),
+        ),
+        IconButton.filledTonal(
+          tooltip: 'Pet steward',
+          onPressed: () => context.push('/home-plus/pets'),
+          icon: const Icon(Icons.pets_outlined),
+        ),
+        IconButton.filledTonal(
           tooltip: '刷新',
           onPressed: () => setState(_reload),
           icon: const Icon(Icons.refresh_rounded),
@@ -284,6 +299,17 @@ class _HomePlusPageState extends State<HomePlusPage> {
                   '${data.spaces.length} 个房间 · $onlineDevices 台设备在线',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                NexusSurface(
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.calendar_month_outlined),
+                    title: const Text('家庭日程'),
+                    subtitle: const Text('查看冲突、共同空档与到期提醒'),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => context.push('/home-plus/schedule'),
                   ),
                 ),
                 const SizedBox(height: 20),
