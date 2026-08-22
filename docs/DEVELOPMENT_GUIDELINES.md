@@ -73,9 +73,11 @@
   `test` 分支只能构建 `staging` flavor（编译环境仍为 `APP_ENV=test`），
   `release` 分支只能构建 `production`
   flavor，`main` 不发布；具体脚本与验证流程见 `docs/shorebird-code-push.md`。
-- test 版本固定为 `0.0.0+Git提交总数`，要求完整 Git 历史；release 完整版本
-  `x.y.z+N` 必须由发布人输入。Patch 必须复用已上传底包保存的完整版本号。
-- 发布脚本默认 dry-run，只有显式 `-Publish` 才能上传；上传时工作区必须干净。
+- test 的用户版本固定为 `0.0.0`，release 用户版本 `x.y.z` 由发布人输入；两者
+  buildNumber 均使用 UTC 2020-01-01 起累计秒数，并至少大于 Shorebird 上该
+  flavor 的已有最大值。Patch 必须复用已上传底包保存的完整版本号。
+- 发布脚本默认直接上传，只有显式 `-DryRun` 才不上传；上传时工作区必须干净。
+  底包和 Patch 分别记录源码 Git Commit，但 Git 不参与 buildNumber 计算。
   production AAB 必须使用未入库的正式签名，本地 production APK 可用 debug
   签名测试。
 - 保持 Shorebird 默认自动更新模式。除非产品明确要求应用内更新控制，否则不得
