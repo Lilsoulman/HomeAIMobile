@@ -68,6 +68,7 @@
 
 ## 地址与真机联调
 
-- 默认 API 地址在 `env/.env`；构建或调试可用 `--dart-define=API_BASE_URL=https://...` 覆盖。
+- 默认 API 地址在 `env/.env`；test/production 构建分别使用 `config/test.json` 与 `config/production.json`，当前均指向 `http://150.158.106.238`。构建或调试可用 `--dart-define=API_BASE_URL=https://...` 覆盖。
+- 当前公网地址仍使用明文 HTTP，仅作为阶段性联调配置；正式面向公网发布前必须迁移 HTTPS。
 - Android 真机的 `localhost` 指向设备自身，使用后端电脑的局域网 IP；Android 模拟器通常使用 `10.0.2.2`。
 - 切换地址会清空当前会话并要求重新登录。仅使用受信任的开发/测试地址，不在客户端配置第三方 Endpoint。

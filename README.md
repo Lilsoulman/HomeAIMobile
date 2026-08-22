@@ -13,8 +13,9 @@ flutter run
 
 ## Dart 代码热更新
 
-正式应用的 Dart 代码热更新使用 Shorebird。项目保持自动更新模式，不包含图片、
-配置或其他资源热更新。底包和 Patch 的边界、命令与验证流程见
+Android 测试包和生产包的 Dart 代码热更新统一使用 Shorebird。`test` 分支构建
+`staging` flavor，`release` 分支构建 `production` flavor；脚本默认 dry-run，只有显式
+传入 `-Publish` 才会上传。底包和 Patch 的边界、命令与验证流程见
 [`docs/shorebird-code-push.md`](docs/shorebird-code-push.md)。
 
 ## 验证
@@ -25,14 +26,15 @@ flutter test
 flutter build web
 ```
 
-入口代码位于 `lib/main.dart`，平台工程位于 `android/`、`ios/`、`web/` 和 `windows/`。待办、日程、智能家居与专家文件默认使用本地仓库；以 `--dart-define=USE_LOCAL_DATA=false` 运行时，已接入的 Todo、Calendar、SmartHome 与专家文件能力会切换到对应的 HTTP 仓库。
+入口代码位于 `lib/main.dart`，平台工程位于 `android/`、`ios/`、`web/` 和
+`windows/`。业务数据统一通过既有 HTTP Repository 和自有后端 API 获取。
 ## API integration
 
 The mobile client follows the backend contract in
 `D:\NexusMind\core\DEVELOPMENT.md` and
 `D:\NexusMind\core\docs\api-implementation.md`.
 
-- Base URL: `http://localhost:5280/api/v1` by default.
+- Base URL: `http://150.158.106.238/api/v1` by default.
 - Request bodies and query parameters use camelCase.
 - The response envelope is `Code`, `Msg`, `Data`; business fields follow the
   backend PascalCase contract.
@@ -48,11 +50,10 @@ Edit `env/.env`, then launch normally:
 flutter run
 ```
 
-The tracked development default enables HTTP repositories:
+当前跟踪的默认地址为：
 
 ```dotenv
-USE_LOCAL_DATA=false
-API_BASE_URL=http://localhost:5280
+API_BASE_URL=http://150.158.106.238
 ```
 
 This file is bundled with the application, so it must never contain tokens,
@@ -60,10 +61,11 @@ passwords, keys, or other secrets. On an Android device, `localhost` points to
 the device itself. Use the backend computer's LAN IP instead; Android emulators
 normally use `10.0.2.2`.
 
-CI and temporary debugging can still override `env/.env` with `dart-define`:
+构建 flavor 使用对应的 JSON 配置；临时调试也可直接覆盖地址：
 
 ```powershell
-flutter run --dart-define=API_BASE_URL=http://192.168.1.10:5280 --dart-define=USE_LOCAL_DATA=false
+flutter run --flavor staging --dart-define-from-file=config/test.json
+flutter run --flavor staging --dart-define=APP_ENV=test --dart-define=API_BASE_URL=http://192.168.1.10:5280
 ```
 
 The login page's developer settings also allow changing the base URL. Changing

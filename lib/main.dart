@@ -1,10 +1,12 @@
 // 启动顺序：EnvConfig → TokenStorage → ApiClient → AuthController → runApp。
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'core/api/api_client.dart';
+import 'core/env/build_config.dart';
 import 'core/env/env_config.dart';
 import 'core/settings/app_settings.dart';
 import 'core/storage/token_storage.dart';
@@ -58,6 +60,7 @@ import 'router.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  BuildConfig.initialize(nativeFlavor: appFlavor);
   final env = await EnvConfig.init();
   final tokenStorage = await createTokenStorage();
   final settings = await AppSettings.load();

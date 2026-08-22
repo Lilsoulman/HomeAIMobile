@@ -18,6 +18,7 @@
 | ID | 状态 | 依赖 | 编码任务 | 改动位置 | 完成标准与验证 |
 | --- | --- | --- | --- | --- | --- |
 | INFRA-H1 | 完成 | Flutter 3.47.1、Shorebird 账号 | 接入 Shorebird 自动更新，仅允许 Dart 代码 Patch，不增加资源热更新或应用内更新 UI | `shorebird.yaml`、`pubspec.yaml`、`pubspec.lock`、`android/gradle.properties`、`docs/shorebird-code-push.md`、`docs/DEVELOPMENT_GUIDELINES.md` | `shorebird init`、doctor 与 Android AAB Release dry-run 通过；Release/Patch 边界、命令、签名和真机验证要求已记录 |
+| INFRA-H2 | 完成 | INFRA-H1、Git `test`/`release` 分支 | 建立 Android staging/production flavors、编译期环境校验、Git 版本规则与本地 Shorebird 底包/Patch 脚本 | `android/app/`、`lib/core/env/`、`config/`、`scripts/`、发布文档 | test 使用 `0.0.0+Git提交总数`，release 手输 `x.y.z+N`；脚本默认 dry-run，生产 AAB 强制正式签名，Patch 复用已发布底包版本 |
 
 ### M3 家庭日程协同移动端执行计划
 

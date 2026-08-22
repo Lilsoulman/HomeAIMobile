@@ -63,14 +63,21 @@
   响应字段的原始大小写。
 - Token 使用 `TokenStorage` 存储；非敏感配置使用 `AppSettings` 或
   `EnvConfig`。不得记录密码、Token 或完整 API 响应。
-- 默认启动配置存放于 `env/.env`，可以定义 `API_BASE_URL` 与
-  `USE_LOCAL_DATA`，但不得包含 Token、密码、密钥或其他敏感信息。CI 或
-  临时运行可通过 `dart-define` 覆盖这些值。
+- 默认启动配置存放于 `env/.env`；发布构建分别读取 `config/test.json` 和
+  `config/production.json`。配置只允许定义环境标识和自有后端地址，不得包含
+  Token、密码、密钥或其他敏感信息。
 
 ## 发布与 Dart 代码热更新
 
-- 正式底包与 Dart Patch 统一使用 Shorebird 构建，配置来源为根目录
-  `shorebird.yaml`；具体命令与验证流程见 `docs/shorebird-code-push.md`。
+- Android 测试包和生产包的底包与 Dart Patch 统一使用 Shorebird 构建。
+  `test` 分支只能构建 `staging` flavor（编译环境仍为 `APP_ENV=test`），
+  `release` 分支只能构建 `production`
+  flavor，`main` 不发布；具体脚本与验证流程见 `docs/shorebird-code-push.md`。
+- test 版本固定为 `0.0.0+Git提交总数`，要求完整 Git 历史；release 完整版本
+  `x.y.z+N` 必须由发布人输入。Patch 必须复用已上传底包保存的完整版本号。
+- 发布脚本默认 dry-run，只有显式 `-Publish` 才能上传；上传时工作区必须干净。
+  production AAB 必须使用未入库的正式签名，本地 production APK 可用 debug
+  签名测试。
 - 保持 Shorebird 默认自动更新模式。除非产品明确要求应用内更新控制，否则不得
   引入 `shorebird_code_push` 或在页面层实现更新状态。
 - Patch 仅包含 Dart 代码及纯 Dart 依赖变更。原生代码、Flutter Plugin、平台

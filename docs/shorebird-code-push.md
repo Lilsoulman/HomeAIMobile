@@ -1,87 +1,108 @@
-# Shorebird Dart 代码热更新
+# Shorebird Android Dart 代码热更新
 
-## 当前接入
+## 发布模型
 
-- Shorebird 应用配置位于仓库根目录的 `shorebird.yaml`。
-- `pubspec.yaml` 将该文件打入应用资产，供 Shorebird Updater 识别应用。
-- 当前保持 `auto_update` 默认值。应用启动时在后台检查并下载补丁，补丁在
-  下一次启动时生效。
-- 不引入 `shorebird_code_push`，不提供应用内手动检查、下载或安装界面。
-- 本阶段不处理图片、配置或其他资源的远端更新。
-- Android 发布基线固定为 Flutter 3.47.1；本机需安装 Android
-  command-line tools、接受 SDK licenses，并保证 `flutter` 可由 `PATH` 找到。
-- `file_picker` 固定在兼容现有实例 API 的 10.3.10，以使用 Flutter 工程的
-  `compileSdkVersion`；升级到 11.x 前必须先处理其静态 API 破坏性变更。
+正式分发的 Android 测试包和生产包都由 Shorebird 构建。普通 `flutter build`
+产物不具备接收 Shorebird Patch 的能力。
 
-## 可热更新边界
+| Git 分支 | Flutter flavor | 包名 | 应用名 | 版本规则 | 配置 |
+| --- | --- | --- | --- | --- | --- |
+| `test` | `staging` | `com.homemind.nexusmindtest` | NexusMind Test | `0.0.0+Git提交总数` | `config/test.json` |
+| `release` | `production` | `com.homemind.nexusmind` | NexusMind | 手动输入 `x.y.z+N` | `config/production.json` |
 
-适合使用 Shorebird Patch 的变更：
+Android Gradle Plugin 禁止 flavor 名以 `test` 开头，因此内部 flavor 使用
+`staging`，但 Git 分支和编译环境仍叫 `test`。`main` 保留用于日常集成，但不
+允许执行发布脚本。test 的 buildNumber 使用
+`git rev-list --count HEAD`，因此构建仓库必须包含完整 Git 历史，不能使用
+shallow clone。release 的完整版本号由发布人输入，`N` 必须是正整数。
 
-- Dart 业务逻辑、状态管理和页面交互；
-- 由 Dart 生成的代码；
-- 不包含原生实现的纯 Dart 依赖变更。
+`APP_ENV` 在编译期写入；应用启动时会校验它与原生 flavor 是否一致。当前两套
+配置都连接 `http://150.158.106.238`。HTTP 明文仅作为当前阶段的已知技术债，
+正式面向公网发布前应迁移到 HTTPS。
 
-必须发布新底包的变更：
+## 自动化脚本
 
-- Android、iOS 等平台工程和原生代码；
-- 新增、删除或升级含原生实现的 Flutter Plugin；
-- 图片、字体、`env/.env` 等 Flutter Asset；
-- Flutter Engine、Flutter SDK 或构建配置变更；
-- 权限、签名、包名、应用图标和启动图变更。
+脚本均为本地 PowerShell 文件，默认只执行 Shorebird dry-run，不会在云端创建
+Release 或 Patch。只有显式传入 `-Publish` 才会上传。
 
-不得使用 `--allow-native-diffs` 或 `--allow-asset-diffs` 绕过检查。检测到
-原生或资源差异时，应提升版本号并重新发布底包。
-
-## 首个底包
-
-用户只有安装 Shorebird 构建的底包后，才能接收对应版本的 Patch。普通
-`flutter build` 产物不能作为该版本的 Shorebird 底包。
-
-发布前先验证，不上传：
+若 Windows 默认策略禁止执行本地脚本，只为当前终端临时放行：
 
 ```powershell
-shorebird release android --artifact=aab --flutter-version=3.47.1 --dry-run
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 ```
 
-当前工程已用该命令通过 AAB 构建验证；dry-run 不会创建或上传 Release。
+关闭该终端后设置自动失效，不需要修改全局执行策略。
 
-正式生成并上传 Release：
+test 分支构建 APK：
 
 ```powershell
-shorebird release android --artifact=aab --flutter-version=3.47.1
+.\scripts\build_android_base.ps1 -Artifact apk
+.\scripts\build_android_base.ps1 -Artifact apk -Publish
 ```
 
-将该命令生成的 AAB 提交到应用商店。`pubspec.yaml` 中的 `version` 必须与商店
-版本一致。测试 APK 可将 `--artifact=aab` 改为 `--artifact=apk`，但不能拿普通
-Flutter APK 验证 Patch。
+release 分支构建本地测试 APK 或正式 AAB：
+
+```powershell
+.\scripts\build_android_base.ps1 -Artifact apk -ReleaseVersion 1.0.0+1
+.\scripts\build_android_base.ps1 -Artifact aab -ReleaseVersion 1.0.0+1 -Publish
+```
+
+production APK 在未配置正式证书时允许使用 debug 签名，仅供本地安装测试。
+production AAB 无论 dry-run 还是上传，都要求存在未入库的
+`android/key.properties` 和正式 keystore，否则脚本立即失败。
+
+底包真正上传成功后，脚本将版本、flavor、源码提交和配置哈希保存到忽略目录
+`.release-state/<flavor>.json`。构建产物复制到忽略目录
+`artifacts/<flavor>/<完整版本>/`。
 
 ## 发布 Dart Patch
 
-1. 从已发布底包对应的源码提交开始修改，只提交可热更新范围内的 Dart 变更。
-2. 执行格式化、静态分析和相关测试。
-3. 对目标 Release 做不上传验证：
+从已发布底包之后提交可热更新的 Dart 修改，完成验证和提交后执行：
 
 ```powershell
-shorebird patch android --release-version=1.0.0 --dry-run
+.\scripts\build_android_patch.ps1
+.\scripts\build_android_patch.ps1 -Publish
 ```
 
-4. 验证通过后正式上传：
+脚本默认读取 `.release-state/<flavor>.json`，确保 Patch 使用底包发布时保存的
+完整版本号。不能用当前 Git 提交数重新计算 Patch 目标版本。状态文件丢失时，可
+明确指定已存在的 Shorebird Release：
 
 ```powershell
-shorebird patch android --release-version=1.0.0
+.\scripts\build_android_patch.ps1 -ReleaseVersion 0.0.0+123
+.\scripts\build_android_patch.ps1 -ReleaseVersion 1.0.0+7 -Publish
 ```
 
-将示例版本 `1.0.0` 替换为目标底包的实际版本。Release 和 Patch 必须使用一致的
-`--flavor`、`--target`、`--dart-define` 与混淆参数；不能依赖未记录的本机环境。
+正式上传底包或 Patch 时 Git 工作区必须干净。Patch 脚本会根据底包提交检查
+变更范围；发现平台工程、Plugin 锁定、Shorebird 配置或 Asset 变更时会要求
+重新发布底包，Shorebird 自身还会执行最终兼容性检查。
 
-## 验证标准
+## 可热更新边界
 
-- Shorebird Release 安装到 Android 真机或模拟器；
-- 启动一次并记录底包行为；
-- 上传 Patch 后再次启动，让补丁在后台下载；
-- 完全退出并重新启动，确认 Dart 改动生效；
-- 验证登录、会话恢复、首页和本次修复对应流程；
-- 在 Shorebird Console 确认目标 Release、Patch 和安装情况。
+适合 Patch：
 
-在首个正式底包发布前配置 Patch Signing。私钥只能保存在本地安全存储、CI
-Secret 或 KMS，不得写入仓库；底包只携带用于验签的公钥。
+- Dart 业务逻辑、状态管理、页面交互和由 Dart 生成的代码；
+- 不包含原生实现的纯 Dart 依赖代码。
+
+必须发布新底包：
+
+- Android/iOS 等平台工程、权限、签名、包名、图标和启动图；
+- 新增、删除或升级含原生实现的 Flutter Plugin；
+- 图片、字体、`env/.env` 等 Flutter Asset；
+- Flutter Engine、Flutter SDK、构建配置和 Shorebird 配置。
+
+不得使用允许原生或 Asset 差异的参数绕过检查。当前保持 Shorebird 默认自动
+更新：应用启动后后台检查和下载 Patch，并在下一次启动时生效；未引入
+`shorebird_code_push`，也没有应用内手动更新 UI。
+
+## 首次发布与验证
+
+1. 在目标分支运行底包脚本（不带 `-Publish`），确认 dry-run 成功。
+2. 运行同一命令并增加 `-Publish`，上传 Release 后安装生成的 APK。
+3. 修改并提交可热更新 Dart 代码，先运行 Patch dry-run，再以 `-Publish` 上传。
+4. 打开底包一次，等待后台下载；完全退出再启动，确认改动生效。
+5. 验证登录、会话恢复、首页和本次修复流程，并在 Shorebird Console 核对目标
+   Release、Patch 与安装情况。
+
+首个正式生产底包发布前启用 Patch Signing。私钥只能放在本地安全存储或受控
+Secret 中，不得提交到 Git。

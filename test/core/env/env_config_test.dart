@@ -21,7 +21,7 @@ void main() {
 
     final env = await EnvConfig.init();
 
-    expect(env.baseUrl, 'http://localhost:5280');
+    expect(env.baseUrl, 'http://150.158.106.238');
   });
 
   test('parses comments, whitespace, and quoted dotenv values', () {

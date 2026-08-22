@@ -14,7 +14,7 @@ class EnvConfig extends ChangeNotifier {
   EnvConfig._();
 
   static const _prefsKey = 'env.baseUrl';
-  static const _fallbackBaseUrl = 'http://localhost:5280';
+  static const _fallbackBaseUrl = 'http://150.158.106.238';
   static const _compileBaseUrl = String.fromEnvironment('API_BASE_URL');
 
   static EnvConfig? _instance;
