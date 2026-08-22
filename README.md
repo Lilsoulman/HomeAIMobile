@@ -11,6 +11,12 @@ flutter run
 
 浏览器调试：`flutter run -d chrome`。使用 VS Code 启动后，保存 Dart 文件会自动热重载；命令行启动时在终端按 `r` 热重载，按 `R` 热重启。上述能力仅适用于 Debug 模式。
 
+## Dart 代码热更新
+
+正式应用的 Dart 代码热更新使用 Shorebird。项目保持自动更新模式，不包含图片、
+配置或其他资源热更新。底包和 Patch 的边界、命令与验证流程见
+[`docs/shorebird-code-push.md`](docs/shorebird-code-push.md)。
+
 ## 验证
 
 ```bash

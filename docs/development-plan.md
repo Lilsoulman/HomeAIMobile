@@ -13,6 +13,12 @@
 | 5 | M3 日程 | 家庭日程协同移动端 | 完成 | 已接入 B46 家庭事件、冲突、共同空档、到期提醒与明日预览 |
 | 6 | F12 旅行计划时间线 | 个人计划移动端体验 | 完成 | 在计划入口聚合已确认的旅行日程，提供摘要、进度与时间线；无旅行事件时引导现有行程规划 |
 
+## 工程基础设施
+
+| ID | 状态 | 依赖 | 编码任务 | 改动位置 | 完成标准与验证 |
+| --- | --- | --- | --- | --- | --- |
+| INFRA-H1 | 完成 | Flutter 3.47.1、Shorebird 账号 | 接入 Shorebird 自动更新，仅允许 Dart 代码 Patch，不增加资源热更新或应用内更新 UI | `shorebird.yaml`、`pubspec.yaml`、`pubspec.lock`、`android/gradle.properties`、`docs/shorebird-code-push.md`、`docs/DEVELOPMENT_GUIDELINES.md` | `shorebird init`、doctor 与 Android AAB Release dry-run 通过；Release/Patch 边界、命令、签名和真机验证要求已记录 |
+
 ### M3 家庭日程协同移动端执行计划
 
 | ID | 状态 | 依赖 | 编码任务 | 改动位置 | 完成标准与验证 |

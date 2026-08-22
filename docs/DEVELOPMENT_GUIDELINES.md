@@ -67,6 +67,19 @@
   `USE_LOCAL_DATA`，但不得包含 Token、密码、密钥或其他敏感信息。CI 或
   临时运行可通过 `dart-define` 覆盖这些值。
 
+## 发布与 Dart 代码热更新
+
+- 正式底包与 Dart Patch 统一使用 Shorebird 构建，配置来源为根目录
+  `shorebird.yaml`；具体命令与验证流程见 `docs/shorebird-code-push.md`。
+- 保持 Shorebird 默认自动更新模式。除非产品明确要求应用内更新控制，否则不得
+  引入 `shorebird_code_push` 或在页面层实现更新状态。
+- Patch 仅包含 Dart 代码及纯 Dart 依赖变更。原生代码、Flutter Plugin、平台
+  工程、Flutter SDK、图片、字体和 `env/.env` 等资产变更必须发布新底包。
+- Release 与对应 Patch 必须使用一致的 flavor、target、dart-define、混淆和符号
+  参数，并可追溯到源码提交；禁止使用允许原生或资产差异的强制参数绕过检查。
+- 正式发布前启用 Patch Signing。私钥只允许存放于本地安全位置、CI Secret 或
+  KMS，不得提交到仓库或写入项目文档。
+
 ## UI 实现
 
 遵循 `docs/UI_STYLE_GUIDE.md`，并使用 `core/ui` 中的 `NexusTheme`、
