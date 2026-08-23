@@ -71,7 +71,7 @@ if (-not (Get-Command 'git' -ErrorAction SilentlyContinue)) {
 }
 $shorebirdCommand = $env:NEXUS_SHOREBIRD_EXECUTABLE
 if ([string]::IsNullOrWhiteSpace($shorebirdCommand)) {
-    $shorebirdCommand = (Get-Command 'shorebird' -ErrorAction SilentlyContinue).Source
+    $shorebirdCommand = (Get-Command 'shorebird.bat' -ErrorAction SilentlyContinue).Source
 }
 if ([string]::IsNullOrWhiteSpace($shorebirdCommand)) {
     $shorebirdCommand = Join-Path $env:USERPROFILE '.shorebird/bin/shorebird.bat'
