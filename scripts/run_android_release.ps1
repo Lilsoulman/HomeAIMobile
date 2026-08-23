@@ -63,6 +63,7 @@ try {
         if ([string]::IsNullOrWhiteSpace($Choice)) {
             $Choice = Read-Host '请输入 1、2、3 或 4'
         }
+        $Choice = $Choice.Trim()
 
         $artifact = switch ($Choice) {
             '1' { 'apk' }
@@ -77,6 +78,7 @@ try {
             if ([string]::IsNullOrWhiteSpace($ReleaseVersion)) {
                 $ReleaseVersion = Read-Host '请输入正式 versionName（例如 1.2.0）'
             }
+            $ReleaseVersion = $ReleaseVersion.Trim()
             if ($ReleaseVersion -notmatch '^\d+\.\d+\.\d+$') {
                 throw '正式 versionName 必须使用 x.y.z 格式，例如 1.2.0。'
             }
@@ -103,6 +105,7 @@ try {
         if ([string]::IsNullOrWhiteSpace($Choice)) {
             $Choice = Read-Host '请输入 1 或 2'
         }
+        $Choice = $Choice.Trim()
         if ($Choice -notin @('1', '2')) {
             throw "无效选择 '$Choice'，只能输入 1 或 2。"
         }
