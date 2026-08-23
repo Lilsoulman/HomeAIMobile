@@ -7,19 +7,19 @@
 
 | Git 分支 | Flutter flavor | 包名 | 应用名 | versionName | buildNumber |
 | --- | --- | --- | --- | --- | --- |
-| `test` | `staging` | `com.homemind.nexusmindtest` | NexusMind Test | 永远 `0.0.0` | 自动时间戳 |
+| `main` | `staging` | `com.homemind.nexusmindtest` | NexusMind Test | 永远 `0.0.0` | 自动时间戳 |
 | `release` | `production` | `com.homemind.nexusmind` | NexusMind | 手动输入 `x.y.z` | 自动时间戳 |
 
 Android Gradle Plugin 禁止 flavor 名以 `test` 开头，因此内部 flavor 使用
-`staging`，但 Git 分支和编译环境仍叫 `test`。`main` 保留用于日常集成，但不
-允许执行发布脚本。
+`staging`；Git 主分支为 `main`，编译环境仍叫 `test`（`APP_ENV=test`）。
+`main` 同时承担日常集成和 staging 测试发布，测试通过后再合并到 `release`。
 
 buildNumber 使用“当前 UTC 时间减去 `2020-01-01T00:00:00Z` 的累计秒数”。
 脚本还会查询 Shorebird 上该 flavor 的 Android Releases；如果时间戳没有超过
 已有最大 buildNumber，则改用“最大值 + 1”。Android 上限校验为
 `1..2100000000`。
 
-例如 test 用户看到的版本始终是 `0.0.0`，但两个底包在 Android 和 Shorebird
+例如 staging 用户看到的版本始终是 `0.0.0`，但两个底包在 Android 和 Shorebird
 内部可分别标识为 `0.0.0+209000123`、`0.0.0+209010456`。release 发布人只输入
 `1.2.0`，脚本自动形成类似 `1.2.0+209020789` 的完整版本。
 
@@ -40,7 +40,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
 ## 发布新底包
 
-test 分支：
+main 分支（staging）：
 
 ```powershell
 # 构建 APK 并直接上传 Shorebird

@@ -80,11 +80,11 @@ $branch = (& git branch --show-current).Trim()
 if ($LASTEXITCODE -ne 0) { throw 'Unable to read the current Git branch.' }
 
 switch ($branch) {
-    'test' {
+    'main' {
         $flavor = 'staging'
         $configFile = 'config/test.json'
         if (-not [string]::IsNullOrWhiteSpace($ReleaseVersion)) {
-            throw 'Do not pass -ReleaseVersion on test. Its versionName is always 0.0.0.'
+            throw 'Do not pass -ReleaseVersion on main. Its staging versionName is always 0.0.0.'
         }
         $versionName = '0.0.0'
     }
@@ -100,7 +100,7 @@ switch ($branch) {
         $versionName = $ReleaseVersion
     }
     default {
-        throw "Branch '$branch' cannot publish. Use test or release."
+        throw "Branch '$branch' cannot publish. Use main or release."
     }
 }
 

@@ -70,10 +70,10 @@
 ## 发布与 Dart 代码热更新
 
 - Android 测试包和生产包的底包与 Dart Patch 统一使用 Shorebird 构建。
-  `test` 分支只能构建 `staging` flavor（编译环境仍为 `APP_ENV=test`），
+  `main` 分支只能构建 `staging` flavor（编译环境仍为 `APP_ENV=test`），
   `release` 分支只能构建 `production`
-  flavor，`main` 不发布；具体脚本与验证流程见 `docs/shorebird-code-push.md`。
-- test 的用户版本固定为 `0.0.0`，release 用户版本 `x.y.z` 由发布人输入；两者
+  flavor；具体脚本与验证流程见 `docs/shorebird-code-push.md`。
+- staging 的用户版本固定为 `0.0.0`，release 用户版本 `x.y.z` 由发布人输入；两者
   buildNumber 均使用 UTC 2020-01-01 起累计秒数，并至少大于 Shorebird 上该
   flavor 的已有最大值。Patch 必须复用已上传底包保存的完整版本号。
 - 发布脚本默认直接上传，只有显式 `-DryRun` 才不上传；上传时工作区必须干净。

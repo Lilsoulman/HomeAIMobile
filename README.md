@@ -13,7 +13,7 @@ flutter run
 
 ## Dart 代码热更新
 
-Android 测试包和生产包的 Dart 代码热更新统一使用 Shorebird。`test` 分支构建
+Android 测试包和生产包的 Dart 代码热更新统一使用 Shorebird。`main` 分支构建
 `staging` flavor，`release` 分支构建 `production` flavor。脚本默认完成构建并
 上传 Shorebird，只有显式传入 `-DryRun` 才不会上传。底包和 Patch 的边界、
 版本规则、命令与验证流程见

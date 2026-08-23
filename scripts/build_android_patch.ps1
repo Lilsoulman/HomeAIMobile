@@ -86,7 +86,7 @@ if ($LASTEXITCODE -ne 0 -or (Resolve-Path $gitRoot).Path -ne $repoRoot) {
 }
 $branch = (& git branch --show-current).Trim()
 switch ($branch) {
-    'test' {
+    'main' {
         $flavor = 'staging'
         $configFile = 'config/test.json'
     }
@@ -95,7 +95,7 @@ switch ($branch) {
         $configFile = 'config/production.json'
     }
     default {
-        throw "Branch '$branch' cannot publish. Use test or release."
+        throw "Branch '$branch' cannot publish. Use main or release."
     }
 }
 
@@ -116,11 +116,11 @@ $buildNumber = [int64]$Matches['number']
 if ($state.branch -ne $branch -or $state.flavor -ne $flavor) {
     throw 'The saved base release state does not match the current branch and flavor.'
 }
-if ($branch -eq 'test' -and $versionName -ne '0.0.0') {
-    throw 'The test branch can only patch a 0.0.0+N base release.'
+if ($branch -eq 'main' -and $versionName -ne '0.0.0') {
+    throw 'The main branch can only patch a staging 0.0.0+N base release.'
 }
 if ($branch -eq 'release' -and $versionName -eq '0.0.0') {
-    throw 'The release branch cannot use the test 0.0.0 versionName.'
+    throw 'The release branch cannot use the staging 0.0.0 versionName.'
 }
 if (-not (Test-Path -LiteralPath $configFile -PathType Leaf)) {
     throw "Missing environment configuration: $configFile"

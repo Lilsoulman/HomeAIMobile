@@ -38,7 +38,7 @@ try {
         versionName = '0.0.0'
         buildNumber = 123456
         flavor = 'staging'
-        branch = 'test'
+        branch = 'main'
         baseCommit = $baseCommit
         configFile = $configFile
         configSha256 = $configHash
