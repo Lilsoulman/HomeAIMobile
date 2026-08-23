@@ -1,16 +1,16 @@
 @echo off
 setlocal
 chcp 65001 >nul
-title NexusMind Staging - Dart Patch 构建与上传
+title NexusMind Staging - Dart Patch
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\run_android_release.ps1" -Mode Patch -TargetEnvironment Staging
 set "RESULT=%ERRORLEVEL%"
 
 echo.
 if "%RESULT%"=="0" (
-    echo [成功] Staging Patch 任务执行完成。
+    echo [SUCCESS] Staging Patch task completed.
 ) else (
-    echo [失败] Staging Patch 任务执行失败，请查看上方原因和日志文件。
+    echo [FAILED] See the Chinese error above and the saved log file.
 )
 echo.
 pause
