@@ -38,6 +38,19 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
 关闭终端后该设置自动失效。
 
+### Windows 双击启动器
+
+两个本地工作区分别提供固定环境的双击文件，不自动选择环境：
+
+- `HomeAIMobile`（main）：`build_staging_base.bat`、`build_staging_patch.bat`；
+- `HomeAIMobile-release`（release）：`build_production_base.bat`、
+  `build_production_patch.bat`。
+
+每个启动器固定目标环境，并校验当前分支是否正确。production 构建底包时会要求
+输入 `x.y.z` 格式的 versionName。执行完成后窗口会停留并明确显示成功或失败；
+完整控制台输出、Shorebird 参数和错误堆栈保存在 `.release-logs/`。该目录被 Git
+忽略。菜单中的“正式上传”选项会立即调用 Shorebird，不会再次确认。
+
 ## 发布新底包
 
 main 分支（staging）：
