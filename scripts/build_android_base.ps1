@@ -266,7 +266,11 @@ if ($builtArtifact) {
     Copy-Item -LiteralPath $builtArtifact -Destination $artifactTarget -Force
     Write-Host "Artifact: $artifactTarget"
 } else {
-    Write-Warning "No $Artifact artifact was found in an expected output path."
+    if (-not $alreadyPublished) {
+        $expectedArtifactPaths = $artifactCandidates -join ', '
+        throw "Shorebird did not produce the expected $Artifact artifact. Expected one of: $expectedArtifactPaths. Review the build failure above."
+    }
+    Write-Warning "Release $fullVersion already exists, but no fresh local $Artifact artifact was found. The matching pending state can still be finalized."
 }
 
 if (-not $DryRun) {
