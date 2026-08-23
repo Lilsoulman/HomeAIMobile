@@ -22,7 +22,8 @@ Android 测试包和生产包的 Dart 代码热更新统一使用 Shorebird。`m
 Windows 下，main 工作区可直接双击 `build_staging_base.bat` 或
 `build_staging_patch.bat`；release 工作区使用对应的 `build_production_base.bat`
 或 `build_production_patch.bat`。启动器会显示 DryRun/上传菜单，执行后保持窗口
-打开，并将完整成功或失败日志保存到 `.release-logs/`。
+打开，并将完整成功或失败日志保存到 `.release-logs/`。BAT 直接调用底包或 Patch
+核心脚本，不再经过额外的 PowerShell 调度层。
 
 ## 验证
 

@@ -49,7 +49,9 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 每个启动器固定目标环境，并校验当前分支是否正确。production 构建底包时会要求
 输入 `x.y.z` 格式的 versionName。执行完成后窗口会停留并明确显示成功或失败；
 完整控制台输出、Shorebird 参数和错误堆栈保存在 `.release-logs/`。该目录被 Git
-忽略。菜单中的“正式上传”选项会立即调用 Shorebird，不会再次确认。
+忽略。两个 BAT 分别直接调用必要的 `build_android_base.ps1` 和
+`build_android_patch.ps1`，没有额外运行时调度脚本。菜单中的“正式上传”选项会
+立即调用 Shorebird，不会再次确认。
 
 ## 发布新底包
 
