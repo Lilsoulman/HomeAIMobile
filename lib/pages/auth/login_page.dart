@@ -1,13 +1,9 @@
-// 执行模式 25-26：登录 / 注册页。
-// 沿用 ProfilePage 视觉语言（深色圆角面板）。登录页右上角放"切换服务器"入口。
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/api/api_exception.dart';
 import '../../features/auth/auth_controller.dart';
-import '../profile/developer_settings_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -57,20 +53,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('登录'),
-        actions: [
-          IconButton(
-            tooltip: '切换服务器',
-            icon: const Icon(Icons.dns_outlined),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const DeveloperSettingsPage(),
-              ),
-            ),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('登录')),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -95,7 +78,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'NexusMind',
+                      'HomeMind',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w800,
@@ -244,7 +227,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      '创建你的 NexusMind 账号',
+                      '创建你的 HomeMind 账号',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w800,
