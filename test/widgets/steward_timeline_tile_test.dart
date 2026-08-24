@@ -7,7 +7,7 @@ import 'package:nexus_mind_mobile/widgets/steward_timeline_tile.dart';
 
 void main() {
   Widget wrap(Widget tile) => MaterialApp(
-    theme: NexusTheme.light(NexusPalette.aiAccent),
+    theme: NexusTheme.light(NexusPalette.homeAccent),
     home: Scaffold(body: tile),
   );
 
@@ -34,7 +34,7 @@ void main() {
     await tester.pumpWidget(
       wrap(
         StewardTimelineTile(
-          category: 'expert',
+          category: 'scene',
           title: '动态标题',
           time: DateTime(2026, 8, 7, 10),
           onTap: () => tapped = true,

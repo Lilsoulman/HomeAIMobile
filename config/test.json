@@ -1,4 +1,4 @@
 {
   "APP_ENV": "test",
-  "API_BASE_URL": "http://150.158.106.238"
+  "API_BASE_URL": "http://localhost:5280"
 }

@@ -1,6 +1,3 @@
-// P5 公共管家动态时间线条目：分类图标 + 标题 + 摘要 + 时间，
-// 可选风险徽标与点击回调。自 P3 dashboard_page 的私有 _ActivityTile 提取。
-
 import 'package:flutter/material.dart';
 
 import '../core/ui/nexus_theme.dart';
@@ -101,8 +98,7 @@ class StewardTimelineTile extends StatelessWidget {
 IconData _activityIcon(String category) => switch (category) {
   'automation' => Icons.bolt_outlined,
   'confirmation' => Icons.verified_user_outlined,
-  'expert' => Icons.psychology_outlined,
-  'life' => Icons.restaurant_outlined,
+  'scene' => Icons.auto_awesome_outlined,
   _ => Icons.auto_awesome_outlined,
 };
 

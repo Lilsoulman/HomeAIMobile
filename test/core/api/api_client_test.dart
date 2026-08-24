@@ -66,14 +66,14 @@ void main() {
     );
 
     final id = await api.post<int>(
-      '/todos',
+      '/protected-resource',
       body: {'title': 'Buy milk'},
       parseData: (raw) => (raw as Map<String, dynamic>)['id'] as int,
     );
 
     expect(id, 7);
     expect(request.method, 'POST');
-    expect(request.path, '/todos');
+    expect(request.path, '/protected-resource');
     expect(request.data, {'title': 'Buy milk'});
   });
 }

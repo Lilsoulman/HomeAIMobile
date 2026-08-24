@@ -256,13 +256,13 @@ class NexusSurface extends StatelessWidget {
       border: Border.all(color: Theme.of(context).dividerColor),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.08),
+          color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.08),
           blurRadius: 14,
           offset: const Offset(0, 6),
         ),
       ],
     ),
-    child: child,
+    child: Material(type: MaterialType.transparency, child: child),
   );
 }
 
