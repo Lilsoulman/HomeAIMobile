@@ -23,6 +23,62 @@ class SmartHomeSpaceDto {
       );
 }
 
+/// 家庭首页一次性读模型；`isMock` 仅表示开发期只读模拟数据。
+class SmartHomeBootstrapDto {
+  const SmartHomeBootstrapDto({
+    required this.isMock,
+    required this.disclaimer,
+    required this.generatedAt,
+    required this.spaces,
+    required this.devices,
+    required this.scenes,
+    required this.deviceHealth,
+  });
+
+  factory SmartHomeBootstrapDto.fromJson(Map<String, dynamic> json) {
+    final spaces = _mapList(
+      json,
+      'Spaces',
+    ).map(SmartHomeSpaceDto.fromJson).toList(growable: false);
+    final devices = _mapList(
+      json,
+      'Devices',
+    ).map(SmartHomeDeviceDto.fromJson).toList(growable: false);
+    final scenes = _mapList(
+      json,
+      'Scenes',
+    ).map(SmartSceneDto.fromJson).toList(growable: false);
+    final health = json['DeviceHealth'] ?? json['deviceHealth'];
+    return SmartHomeBootstrapDto(
+      isMock: _boolValue(json, 'IsMock', fallback: false),
+      disclaimer: _nullableString(json, 'Disclaimer'),
+      generatedAt:
+          _dateValue(json, 'GeneratedAt') ??
+          DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      spaces: spaces,
+      devices: devices,
+      scenes: scenes,
+      deviceHealth: health is Map
+          ? DeviceHealthSummaryDto.fromJson(health.cast<String, dynamic>())
+          : const DeviceHealthSummaryDto(
+              total: 0,
+              healthy: 0,
+              degraded: 0,
+              offline: 0,
+              lowBattery: 0,
+            ),
+    );
+  }
+
+  final bool isMock;
+  final String? disclaimer;
+  final DateTime generatedAt;
+  final List<SmartHomeSpaceDto> spaces;
+  final List<SmartHomeDeviceDto> devices;
+  final List<SmartSceneDto> scenes;
+  final DeviceHealthSummaryDto deviceHealth;
+}
+
 class SmartHomeDeviceDto {
   const SmartHomeDeviceDto({
     required this.id,
@@ -32,6 +88,8 @@ class SmartHomeDeviceDto {
     required this.statusText,
     required this.isOnline,
     required this.updatedAt,
+    this.healthStatus,
+    this.batteryLevel,
   });
 
   final String id;
@@ -41,6 +99,8 @@ class SmartHomeDeviceDto {
   final String statusText;
   final bool isOnline;
   final DateTime updatedAt;
+  final String? healthStatus;
+  final int? batteryLevel;
 
   factory SmartHomeDeviceDto.fromJson(Map<String, dynamic> json) =>
       SmartHomeDeviceDto(
@@ -53,6 +113,8 @@ class SmartHomeDeviceDto {
         updatedAt:
             _dateValue(json, 'StateUpdatedAt') ??
             DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+        healthStatus: _nullableString(json, 'HealthStatus'),
+        batteryLevel: _nullableInt(json, 'BatteryLevel'),
       );
 }
 
@@ -226,6 +288,15 @@ DateTime? _dateValue(Map<String, dynamic> json, String key) {
   final value = json[key] ?? json[_camelCase(key)];
   if (value is DateTime) return value;
   return DateTime.tryParse(value?.toString() ?? '');
+}
+
+List<Map<String, dynamic>> _mapList(Map<String, dynamic> json, String key) {
+  final raw = json[key] ?? json[_camelCase(key)];
+  if (raw is! List) return const [];
+  return raw
+      .whereType<Map>()
+      .map((item) => item.cast<String, dynamic>())
+      .toList(growable: false);
 }
 
 String _camelCase(String value) =>

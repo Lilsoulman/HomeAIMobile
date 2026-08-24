@@ -107,7 +107,10 @@ class NexusMindApp extends StatelessWidget {
     final expertRunRepo = HttpExpertRunRepository(api);
     final skillRepo = HttpSkillRepository(api);
     final aiRepo = HttpAiRepository(api);
-    final smartHomeRepo = HttpSmartHomeRepository(api);
+    final smartHomeRepo = HttpSmartHomeRepository(
+      api,
+      useMockBootstrap: BuildConfig.isTest,
+    );
     final connectorRepo = HttpConnectorRepository(api);
     final attachmentRepo = HttpAttachmentRepository(api);
     final knowledgeRepo = HttpKnowledgeRepository(api);

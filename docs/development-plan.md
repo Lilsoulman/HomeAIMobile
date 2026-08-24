@@ -12,6 +12,15 @@
 | 4 | M3 缴费 | 缴费管家移动端 | 完成 | 已接入 B43 账户、登记、提醒和年度趋势 API |
 | 5 | M3 日程 | 家庭日程协同移动端 | 完成 | 已接入 B46 家庭事件、冲突、共同空档、到期提醒与明日预览 |
 | 6 | F12 旅行计划时间线 | 个人计划移动端体验 | 完成 | 在计划入口聚合已确认的旅行日程，提供摘要、进度与时间线；无旅行事件时引导现有行程规划 |
+| 7 | M3-SM 模拟家庭快照 | 家庭入口开发期联调 | 完成 | test/staging 优先使用 `smart-home/mock/bootstrap`，明确只读模拟边界并在接口不可用时回退标准化读接口 |
+
+### M3-SM 开发期模拟家庭快照执行计划
+
+| ID | 状态 | 依赖 | 编码任务 | 改动位置 | 完成标准与验证 |
+| --- | --- | --- | --- | --- | --- |
+| M3-SM1 | 完成 | 后端 `GET /api/v1/smart-home/mock/bootstrap` 已发布 | 定义聚合 DTO 与可选 Repository 能力，显式解析 `IsMock`、免责声明、空间、设备、场景和健康摘要 | `lib/features/smart_home/dto.dart`、`lib/features/smart_home/smart_home_repository.dart` | PascalCase 映射通过；不传递厂商字段、凭据或原始设备载荷 |
+| M3-SM2 | 完成 | M3-SM1 | test/staging 构建调用模拟快照；服务端未启用时回退标准化空间/设备/场景接口 | `lib/features/smart_home/http_smart_home_repository.dart`、`lib/main.dart` | 仅 `BuildConfig.isTest` 启用；503 回退；场景仍走确认与幂等执行流 |
+| M3-SM3 | 完成 | M3-SM2 | 家庭页展示模拟免责声明并补 Repository 映射测试与回归 Widget 测试 | `lib/pages/home_plus_page.dart`、`test/smart_home/`、`test/home_plus_page_test.dart` | `dart format`、`flutter analyze`、相关 `flutter test` 通过 |
 
 ## 工程基础设施
 

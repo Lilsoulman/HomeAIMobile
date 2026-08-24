@@ -102,6 +102,7 @@
 | `GET /smart-home/spaces` | 无 | `List<SmartHomeSpaceDto>` | 通用 |
 | `GET /smart-home/devices` | `spaceId` | `List<SmartHomeDeviceDto>` | 通用 |
 | `GET /smart-home/scenes` | 无 | `List<SmartSceneDto>` | 通用 |
+| `GET /smart-home/mock/bootstrap` | 无（仅 Development 显式启用） | `SmartHomeMockBootstrapView`（固定 `IsMock=true`） | 通用；只读展示，不执行/确认/写入 |
 | `POST /smart-home/scenes/{key}/run` | `idempotencyKey` | 场景执行结果 | 通用 |
 | `POST /expert-files` | multipart 或预签名上传请求 | `{fileId}` | 通用 |
 | `GET /expert-files` | 无 | `List<ExpertFileDto>` | 通用 |
@@ -124,7 +125,7 @@
 | F6 SmartHome HTTP 接入 | 完成 |
 | F7 Todo HTTP 接入 | 完成 |
 | F8 Calendar HTTP 接入 | 完成 |
-| F9 单专家文件上下文 | 进行中（功能已实现，Widget 测试验证待修复） |
+| F9 单专家文件上下文 | 完成 |
 | F10 专家团多选启动 | 待办 |
 | F11 后端代理层联通 | 待办 |
 

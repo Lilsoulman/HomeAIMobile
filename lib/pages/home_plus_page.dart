@@ -37,19 +37,75 @@ class _HomePlusPageState extends State<HomePlusPage> {
 
   Future<_HomePlusData> _load() async {
     final repository = context.read<SmartHomeRepository>();
-    final spaces = await repository.listSpaces();
-    final results = await Future.wait<Object>([
-      repository.listDevices(),
-      repository.listScenes(),
-      _fetchSpaceHealth(repository, spaces),
-    ]);
+    final SmartHomeBootstrapRepository? bootstrapRepository =
+        repository is SmartHomeBootstrapRepository
+        ? repository as SmartHomeBootstrapRepository
+        : null;
+    if (bootstrapRepository == null) {
+      final spaces = await repository.listSpaces();
+      final results = await Future.wait<Object>([
+        repository.listDevices(),
+        repository.listScenes(),
+        _fetchSpaceHealth(repository, spaces),
+      ]);
+      return _HomePlusData(
+        isMock: false,
+        mockDisclaimer: null,
+        spaces: spaces,
+        devices: results[0] as List<SmartHomeDeviceDto>,
+        scenes: results[1] as List<SmartSceneDto>,
+        healthBySpace: (results[2] as Map<Object, Object>)
+            .cast<String, DeviceHealthSummaryDto>(),
+      );
+    }
+    final bootstrap = await bootstrapRepository.loadBootstrap();
     return _HomePlusData(
-      spaces: spaces,
-      devices: results[0] as List<SmartHomeDeviceDto>,
-      scenes: results[1] as List<SmartSceneDto>,
-      healthBySpace: (results[2] as Map<Object, Object>)
-          .cast<String, DeviceHealthSummaryDto>(),
+      isMock: bootstrap.isMock,
+      mockDisclaimer: bootstrap.disclaimer,
+      spaces: bootstrap.spaces,
+      devices: bootstrap.devices,
+      scenes: bootstrap.scenes,
+      healthBySpace: bootstrap.isMock
+          ? _healthBySpace(bootstrap)
+          : await _fetchSpaceHealth(repository, bootstrap.spaces),
     );
+  }
+
+  Map<String, DeviceHealthSummaryDto> _healthBySpace(
+    SmartHomeBootstrapDto bootstrap,
+  ) {
+    final result = <String, DeviceHealthSummaryDto>{};
+    for (final space in bootstrap.spaces) {
+      final devices = bootstrap.devices
+          .where((device) => device.spaceId == space.id)
+          .toList(growable: false);
+      final total = devices.length;
+      final healthy = devices.where((device) {
+        final status = device.healthStatus;
+        return status == null ? device.isOnline : status == 'healthy';
+      }).length;
+      final degraded = devices
+          .where((device) => device.healthStatus == 'degraded')
+          .length;
+      final offline = devices
+          .where(
+            (device) =>
+                device.healthStatus == 'offline' ||
+                (device.healthStatus == null && !device.isOnline),
+          )
+          .length;
+      final lowBattery = devices
+          .where((device) => device.healthStatus == 'low_battery')
+          .length;
+      result[space.id] = DeviceHealthSummaryDto(
+        total: total,
+        healthy: healthy,
+        degraded: degraded,
+        offline: offline,
+        lowBattery: lowBattery,
+      );
+    }
+    return result;
   }
 
   /// 各空间健康聚合（B10）；单个空间失败时以空摘要兜底，不阻塞页面。
@@ -301,15 +357,39 @@ class _HomePlusPageState extends State<HomePlusPage> {
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
+                if (data.isMock) ...[
+                  const SizedBox(height: 12),
+                  NexusSurface(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.science_outlined,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            data.mockDisclaimer ?? '当前为开发期模拟家庭数据，仅用于只读展示。',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 20),
                 NexusSurface(
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.calendar_month_outlined),
-                    title: const Text('家庭日程'),
-                    subtitle: const Text('查看冲突、共同空档与到期提醒'),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => context.push('/home-plus/schedule'),
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.calendar_month_outlined),
+                      title: const Text('家庭日程'),
+                      subtitle: const Text('查看冲突、共同空档与到期提醒'),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => context.push('/home-plus/schedule'),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -403,12 +483,16 @@ class _HomePlusPageState extends State<HomePlusPage> {
 
 class _HomePlusData {
   const _HomePlusData({
+    required this.isMock,
+    required this.mockDisclaimer,
     required this.spaces,
     required this.devices,
     required this.scenes,
     required this.healthBySpace,
   });
 
+  final bool isMock;
+  final String? mockDisclaimer;
   final List<SmartHomeSpaceDto> spaces;
   final List<SmartHomeDeviceDto> devices;
   final List<SmartSceneDto> scenes;

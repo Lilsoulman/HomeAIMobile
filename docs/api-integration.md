@@ -22,6 +22,13 @@
 
 创建专家运行、技能运行或场景动作后，持久化页面所需的 `runId`，查询运行详情/公开事件。看到待确认 action 时，展示风险与影响范围；用户操作后调用确认接口，继续轮询直到终态。客户端不得推断成功、展示 Prompt 或消费引擎内部数据。
 
+## 开发期模拟家庭数据
+
+| 接口 | 移动端用途 | 数据边界 |
+| --- | --- | --- |
+| `GET /smart-home/mock/bootstrap` | test/staging 构建一次性读取模拟空间、设备、场景与健康摘要 | 仅在服务端显式启用 Development 模拟时调用；必须校验 `IsMock=true` 并展示 `Disclaimer`，只读展示，不执行、确认或写入 |
+| `GET /smart-home/spaces`、`GET /smart-home/devices`、`GET /smart-home/scenes` | 模拟接口不可用时的真实标准化读接口回退 | 仅消费空间、设备、能力、状态摘要和场景公开字段；不显示凭据、厂商实体 ID 或原始状态 |
+
 ## 旅行计划时间线
 
 计划入口的旅行视图复用已发布的日历接口 `GET /calendar/events`，按 `CalendarEventDto` 的标题、时间、地点和描述聚合已确认的旅行事件。创建行程仍使用生活专家 `plan` 流及 `calendar_create_event` 确认动作；客户端不新增旅行计划接口、不 mock 未发布数据，也不展示日历提供商字段或原始事件载荷。
