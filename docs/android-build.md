@@ -20,6 +20,10 @@ Android versionCode 的有效范围内。staging 使用 `config/test.json`，pro
 菜单中的 `1` 构建 APK，`2` 构建 AAB。完整日志保存在 `.build-logs/`，成功产物
 复制到 `artifacts/<flavor>/<versionName+buildNumber>/`。两个目录均不提交 Git。
 
+构建入口使用 `--no-pub`，避免打包过程隐式改写 lock 和 generated 文件。首次构建或
+依赖变化后应先显式运行 `flutter pub get`，审查并提交需要保留的依赖变更，再执行
+Android 构建。
+
 staging 允许从有本地修改的工作区构建，但会打印不可追溯警告。production 必须在
 干净的 `release` 分支构建。production AAB 必须提供未入库的
 `android/key.properties` 和正式 keystore；production APK 未配置正式证书时允许
