@@ -67,27 +67,19 @@
   `config/production.json`。配置只允许定义环境标识和自有后端地址，不得包含
   Token、密码、密钥或其他敏感信息。
 
-## 发布与 Dart 代码热更新
+## Android 构建与发布
 
-- Android 测试包和生产包的底包与 Dart Patch 统一使用 Shorebird 构建。
+- Android 测试包和生产包统一使用标准 Flutter Engine 构建完整 APK/AAB。
   `main` 分支只能构建 `staging` flavor（编译环境仍为 `APP_ENV=test`），
-  `release` 分支只能构建 `production`
-  flavor；具体脚本与验证流程见 `docs/shorebird-code-push.md`。
-- staging 的用户版本固定为 `0.0.0`，release 用户版本 `x.y.z` 由发布人输入；两者
-  buildNumber 均使用 UTC 2020-01-01 起累计秒数，并至少大于 Shorebird 上该
-  flavor 的已有最大值。Patch 必须复用已上传底包保存的完整版本号。
-- 发布脚本默认直接上传，只有显式 `-DryRun` 才不上传；上传时工作区必须干净。
-  底包和 Patch 分别记录源码 Git Commit，但 Git 不参与 buildNumber 计算。
-  production AAB 必须使用未入库的正式签名，本地 production APK 可用 debug
-  签名测试。
-- 保持 Shorebird 默认自动更新模式。除非产品明确要求应用内更新控制，否则不得
-  引入 `shorebird_code_push` 或在页面层实现更新状态。
-- Patch 仅包含 Dart 代码及纯 Dart 依赖变更。原生代码、Flutter Plugin、平台
-  工程、Flutter SDK、图片、字体和 `env/.env` 等资产变更必须发布新底包。
-- Release 与对应 Patch 必须使用一致的 flavor、target、dart-define、混淆和符号
-  参数，并可追溯到源码提交；禁止使用允许原生或资产差异的强制参数绕过检查。
-- 正式发布前启用 Patch Signing。私钥只允许存放于本地安全位置、CI Secret 或
-  KMS，不得提交到仓库或写入项目文档。
+  `release` 分支只能构建 `production` flavor；具体流程见 `docs/android-build.md`。
+- staging 的用户版本固定为 `0.0.0`，production 用户版本 `x.y.z` 由发布人输入；
+  两者 buildNumber 均使用 UTC 2020-01-01 起累计秒数，Git 不参与编号计算。
+- 构建入口不上传第三方服务，并使用 `--no-pub` 避免打包过程改写依赖文件。
+  production 必须从干净的 `release` 工作区构建；staging 有本地修改时必须显示
+  不可追溯警告。
+- 代码、依赖、原生工程、Flutter SDK、图片、字体和配置变化均通过新的完整包分发。
+- production AAB 必须使用未入库的正式签名；本地 production APK 可使用 debug
+  签名测试。私钥只允许存放于本地安全位置、CI Secret 或 KMS，不得提交仓库。
 
 ## UI 实现
 
