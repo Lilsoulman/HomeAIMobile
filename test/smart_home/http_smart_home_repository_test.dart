@@ -153,6 +153,70 @@ void main() {
       expect(requests[0].queryParameters, {'spaceId': '12'});
     });
 
+    test(
+      'maps development mock bootstrap without exposing provider fields',
+      () async {
+        final requests = <RequestOptions>[];
+        final repository = await _repository(requests, [
+          {
+            'IsMock': true,
+            'Disclaimer': '仅用于开发，不代表真实状态。',
+            'GeneratedAt': '2026-08-24T01:00:00Z',
+            'Spaces': [
+              {
+                'Id': -101,
+                'Name': '客厅',
+                'SpaceType': 'living_room',
+                'Summary': '舒适',
+                'DeviceCount': 1,
+                'UpdatedAt': '2026-08-24T01:00:00Z',
+              },
+            ],
+            'Devices': [
+              {
+                'Id': -201,
+                'SpaceId': -101,
+                'Name': '主灯',
+                'DeviceType': 'light',
+                'OnlineStatus': 'online',
+                'StateSummary': '已开启',
+                'HealthStatus': 'healthy',
+                'StateUpdatedAt': '2026-08-24T01:00:00Z',
+              },
+            ],
+            'Scenes': [
+              {
+                'Key': 'sleep',
+                'Name': '睡眠',
+                'Summary': '调暗灯光',
+                'Status': 'active',
+                'UpdatedAt': '2026-08-24T01:00:00Z',
+              },
+            ],
+            'DeviceHealth': {
+              'Total': 1,
+              'Healthy': 1,
+              'Degraded': 0,
+              'Offline': 0,
+              'LowBattery': 0,
+              'DominantStatus': 'healthy',
+            },
+          },
+        ], useMockBootstrap: true);
+
+        final bootstrap = await repository.loadBootstrap();
+
+        expect(bootstrap.isMock, isTrue);
+        expect(bootstrap.disclaimer, contains('不代表真实'));
+        expect(bootstrap.spaces.single.id, '-101');
+        expect(bootstrap.devices.single.healthStatus, 'healthy');
+        expect(bootstrap.deviceHealth.healthy, 1);
+        expect(requests.map((request) => request.path), [
+          '/smart-home/mock/bootstrap',
+        ]);
+      },
+    );
+
     test('health detail falls back safely when fields are absent', () async {
       final repository = await _repository(<RequestOptions>[], [
         {'Id': 7},
@@ -171,8 +235,9 @@ void main() {
 
 Future<HttpSmartHomeRepository> _repository(
   List<RequestOptions> requests,
-  List<Object?> responses,
-) async {
+  List<Object?> responses, {
+  bool useMockBootstrap = false,
+}) async {
   SharedPreferences.setMockInitialValues({});
   final api = ApiClient(
     tokenStorage: _MemoryTokens(),
@@ -192,7 +257,7 @@ Future<HttpSmartHomeRepository> _repository(
       },
     ),
   );
-  return HttpSmartHomeRepository(api);
+  return HttpSmartHomeRepository(api, useMockBootstrap: useMockBootstrap);
 }
 
 class _MemoryTokens implements TokenStorage {

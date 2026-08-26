@@ -1,5 +1,3 @@
-// 启动顺序：EnvConfig → TokenStorage → ApiClient → AuthController → runApp。
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -11,51 +9,10 @@ import 'core/env/env_config.dart';
 import 'core/settings/app_settings.dart';
 import 'core/storage/token_storage.dart';
 import 'core/ui/nexus_theme.dart';
-import 'features/ai/ai_repository.dart';
-import 'features/attachment/attachment_repository.dart';
-import 'features/attachment/http_attachment_repository.dart';
-import 'features/automation/automation_repository.dart';
-import 'features/automation/http_automation_repository.dart';
-import 'features/knowledge/http_knowledge_repository.dart';
-import 'features/knowledge/knowledge_repository.dart';
-import 'features/travel/http_travel_repository.dart';
-import 'features/travel/travel_repository.dart';
 import 'features/auth/auth_controller.dart';
 import 'features/auth/http_auth_repository.dart';
-import 'features/calendar/calendar_repository.dart';
-import 'features/calendar/http_calendar_repository.dart';
-import 'features/connector/connector_repository.dart';
-import 'features/connector/http_connector_repository.dart';
-import 'features/conversation/conversation_repository.dart';
-import 'features/conversation/http_conversation_repository.dart';
-import 'features/dashboard/dashboard_repository.dart';
-import 'features/dashboard/http_dashboard_repository.dart';
-import 'features/family/family_repository.dart';
-import 'features/family/http_family_repository.dart';
-import 'features/favorite/favorite_repository.dart';
-import 'features/favorite/http_favorite_repository.dart';
-import 'features/life/http_life_expert_repository.dart';
-import 'features/life/life_expert_repository.dart';
-import 'features/expert/expert_run_repository.dart';
-import 'features/expert/http_expert_repository.dart';
-import 'features/expert/http_expert_run_repository.dart';
-import 'experts/expert_repository.dart';
-import 'features/skill/http_skill_repository.dart';
-import 'features/skill/skill_repository.dart';
-import 'features/steward/http_steward_repository.dart';
-import 'features/steward/steward_repository.dart';
 import 'features/smart_home/http_smart_home_repository.dart';
 import 'features/smart_home/smart_home_repository.dart';
-import 'features/todo/http_todo_repository.dart';
-import 'features/todo/todo_repository.dart';
-import 'features/finance/finance_repository.dart';
-import 'features/finance/http_finance_repository.dart';
-import 'features/courier/courier_repository.dart';
-import 'features/courier/http_courier_repository.dart';
-import 'features/pet/pet_repository.dart';
-import 'features/pet/http_pet_repository.dart';
-import 'features/family_schedule/family_schedule_repository.dart';
-import 'features/family_schedule/http_family_schedule_repository.dart';
 import 'router.dart';
 
 Future<void> main() async {
@@ -73,7 +30,7 @@ Future<void> main() async {
   await auth.bootstrap();
 
   runApp(
-    NexusMindApp(
+    HomeMindApp(
       auth: auth,
       env: env,
       tokenStorage: tokenStorage,
@@ -83,8 +40,8 @@ Future<void> main() async {
   );
 }
 
-class NexusMindApp extends StatelessWidget {
-  const NexusMindApp({
+class HomeMindApp extends StatelessWidget {
+  const HomeMindApp({
     super.key,
     required this.auth,
     required this.env,
@@ -101,44 +58,7 @@ class NexusMindApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final todoRepo = HttpTodoRepository(api);
-    final calendarRepo = HttpCalendarRepository(api);
-    final expertRepo = HttpExpertRepository(api);
-    final expertRunRepo = HttpExpertRunRepository(api);
-    final skillRepo = HttpSkillRepository(api);
-    final aiRepo = HttpAiRepository(api);
-    final smartHomeRepo = HttpSmartHomeRepository(api);
-    final connectorRepo = HttpConnectorRepository(api);
-    final attachmentRepo = HttpAttachmentRepository(api);
-    final knowledgeRepo = HttpKnowledgeRepository(api);
-    final automationRepo = HttpAutomationRepository(api);
-    final travelRepo = HttpTravelRepository(api);
-    final familyRepo = HttpFamilyRepository(
-      api,
-      homeIdOf: () => auth.tenantId ?? 0,
-    );
-    final stewardRepo = HttpStewardRepository(
-      api,
-      homeIdOf: () => auth.tenantId ?? 0,
-    );
-    final dashboardRepo = HttpDashboardRepository(api);
-    final favoriteRepo = HttpFavoriteRepository(api);
-    final lifeExpertRepo = HttpLifeExpertRepository(api);
-    final conversationRepo = HttpConversationRepository(api);
-    final financeRepo = HttpFinanceRepository(
-      api,
-      homeIdOf: () => auth.tenantId ?? 0,
-    );
-    final courierRepo = HttpCourierRepository(
-      api,
-      homeIdOf: () => auth.tenantId ?? 0,
-    );
-    final petRepo = HttpPetRepository(api, homeIdOf: () => auth.tenantId ?? 0);
-    final familyScheduleRepo = HttpFamilyScheduleRepository(
-      api,
-      homeIdOf: () => auth.tenantId ?? 0,
-    );
-
+    final smartHomeRepository = HttpSmartHomeRepository(api);
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<EnvConfig>.value(value: env),
@@ -146,91 +66,81 @@ class NexusMindApp extends StatelessWidget {
         Provider<TokenStorage>.value(value: tokenStorage),
         Provider<ApiClient>.value(value: api),
         ChangeNotifierProvider<AppSettings>.value(value: settings),
-        Provider<TodoRepository>.value(value: todoRepo),
-        Provider<CalendarRepository>.value(value: calendarRepo),
-        Provider<ExpertRepository>.value(value: expertRepo),
-        Provider<ExpertRunRepository>.value(value: expertRunRepo),
-        Provider<SkillRepository>.value(value: skillRepo),
-        Provider<AiRepository>.value(value: aiRepo),
-        Provider<SmartHomeRepository>.value(value: smartHomeRepo),
-        Provider<ConnectorRepository>.value(value: connectorRepo),
-        Provider<AttachmentRepository>.value(value: attachmentRepo),
-        Provider<KnowledgeRepository>.value(value: knowledgeRepo),
-        Provider<AutomationRepository>.value(value: automationRepo),
-        Provider<TravelRepository>.value(value: travelRepo),
-        Provider<FamilyRepository>.value(value: familyRepo),
-        Provider<StewardRepository>.value(value: stewardRepo),
-        Provider<DashboardRepository>.value(value: dashboardRepo),
-        Provider<FavoriteRepository>.value(value: favoriteRepo),
-        Provider<LifeExpertRepository>.value(value: lifeExpertRepo),
-        Provider<ConversationRepository>.value(value: conversationRepo),
-        Provider<FinanceRepository>.value(value: financeRepo),
-        Provider<CourierRepository>.value(value: courierRepo),
-        Provider<PetRepository>.value(value: petRepo),
-        Provider<FamilyScheduleRepository>.value(value: familyScheduleRepo),
+        Provider<SmartHomeRepository>.value(value: smartHomeRepository),
       ],
-      child: _Root(env: env),
+      child: const _Root(),
     );
   }
 }
 
 class _Root extends StatefulWidget {
-  const _Root({required this.env});
-  final EnvConfig env;
+  const _Root();
 
   @override
   State<_Root> createState() => _RootState();
 }
 
 class _RootState extends State<_Root> {
-  Color _accent = NexusPalette.homeAccent;
+  final Color _accent = NexusPalette.homeAccent;
+  late final GoRouter _router;
+  var _routerInitialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_routerInitialized) {
+      _router = buildAppRouter(auth: context.read<AuthController>());
+      _routerInitialized = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    _router.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<AppSettings>();
     final themeMode = settings.darkMode ? ThemeMode.dark : ThemeMode.light;
-    final dark = NexusTheme.dark(_accent);
-    final light = NexusTheme.light(_accent);
-
-    final router = buildAppRouter(
-      auth: context.read<AuthController>(),
-      themeMode: themeMode,
-      accent: _accent,
-      onThemeChanged: (mode, accent) {
-        _accent = accent;
-        settings.setDarkMode(mode == ThemeMode.dark);
-      },
-    );
 
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      title: 'NexusMind',
-      theme: light,
-      darkTheme: dark,
+      title: 'HomeMind',
+      theme: NexusTheme.light(_accent),
+      darkTheme: NexusTheme.dark(_accent),
       themeMode: themeMode,
-      routerConfig: router,
+      routerConfig: _router,
     );
   }
 }
 
-class NexusMindShell extends StatelessWidget {
-  const NexusMindShell({super.key, required this.navigationShell});
+class HomeMindShell extends StatelessWidget {
+  const HomeMindShell({super.key, required this.navigationShell});
+
   final StatefulNavigationShell navigationShell;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      extendBody: true,
-      body: navigationShell,
-      bottomNavigationBar: _FloatingBottomBar(
-        index: navigationShell.currentIndex,
-        onSelect: (i) => navigationShell.goBranch(
-          i,
-          initialLocation: i == navigationShell.currentIndex,
-        ),
+  Widget build(BuildContext context) => Scaffold(
+    extendBody: true,
+    body: navigationShell,
+    floatingActionButton: FloatingActionButton(
+      tooltip: '语音控制',
+      onPressed: () => ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('语音控制将在服务端契约发布后提供。'))),
+      child: const Icon(Icons.mic_none_outlined),
+    ),
+    floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+    bottomNavigationBar: _FloatingBottomBar(
+      index: navigationShell.currentIndex,
+      onSelect: (index) => navigationShell.goBranch(
+        index,
+        initialLocation: index == navigationShell.currentIndex,
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _FloatingBottomBar extends StatelessWidget {
@@ -239,66 +149,108 @@ class _FloatingBottomBar extends StatelessWidget {
   final int index;
   final ValueChanged<int> onSelect;
 
-  static const items = [
-    (Icons.home_outlined, 'Home'),
-    (Icons.auto_awesome_outlined, 'AI'),
-    (Icons.calendar_today_outlined, 'Plan'),
-    (Icons.home_work_outlined, 'Home controls'),
-    (Icons.person_outline, 'Profile'),
+  static const _items = [
+    (Icons.home_outlined, Icons.home, '首页'),
+    (Icons.auto_awesome_outlined, Icons.auto_awesome, '场景'),
+    (Icons.devices_other_outlined, Icons.devices_other, '设备'),
+    (Icons.person_outline, Icons.person, '我的'),
   ];
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final activeColor = theme.colorScheme.primary;
-    final idleColor = theme.colorScheme.onSurfaceVariant;
     return SafeArea(
       top: false,
-      minimum: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      minimum: const EdgeInsets.fromLTRB(12, 8, 12, 8),
       child: Container(
-        height: 64,
+        height: 72,
         decoration: BoxDecoration(
-          color: theme.cardColor.withValues(alpha: 0.94),
-          borderRadius: BorderRadius.circular(20),
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(NexusLayout.contentRadius),
           border: Border.all(color: theme.dividerColor),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.24),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
+              color: theme.colorScheme.shadow.withValues(alpha: 0.12),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: List.generate(items.length, (i) {
-            final selected = i == index;
-            final item = items[i];
-            return Tooltip(
-              message: item.$2,
-              child: InkWell(
-                onTap: () => onSelect(i),
-                borderRadius: BorderRadius.circular(16),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  width: 48,
-                  height: 44,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? activeColor.withValues(alpha: 0.12)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Icon(
-                    item.$1,
-                    size: 22,
-                    color: selected ? activeColor : idleColor,
-                  ),
-                ),
+          children: [
+            Expanded(
+              child: _NavItem(
+                item: _items[0],
+                selected: index == 0,
+                onTap: () => onSelect(0),
               ),
-            );
-          }),
+            ),
+            Expanded(
+              child: _NavItem(
+                item: _items[1],
+                selected: index == 1,
+                onTap: () => onSelect(1),
+              ),
+            ),
+            const SizedBox(width: 72),
+            Expanded(
+              child: _NavItem(
+                item: _items[2],
+                selected: index == 2,
+                onTap: () => onSelect(2),
+              ),
+            ),
+            Expanded(
+              child: _NavItem(
+                item: _items[3],
+                selected: index == 3,
+                onTap: () => onSelect(3),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  const _NavItem({
+    required this.item,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final (IconData, IconData, String) item;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = selected
+        ? theme.colorScheme.primary
+        : theme.colorScheme.onSurfaceVariant;
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: item.$3,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(NexusLayout.controlRadius),
+        onTap: onTap,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(selected ? item.$2 : item.$1, color: color),
+            const SizedBox(height: 4),
+            Text(
+              item.$3,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: color,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );

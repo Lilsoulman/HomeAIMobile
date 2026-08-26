@@ -1,60 +1,24 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
-import 'experts/domain.dart';
-import 'experts/expert_repository.dart';
-import 'features/ai/ai_repository.dart';
-import 'features/attachment/attachment_repository.dart';
-import 'features/automation/automation_repository.dart';
-import 'features/calendar/calendar_repository.dart';
-import 'features/expert/expert_run_repository.dart';
-import 'features/knowledge/knowledge_repository.dart';
-import 'features/todo/todo_repository.dart';
-import 'features/travel/travel_repository.dart';
 import 'features/auth/auth_controller.dart';
 import 'main.dart';
-import 'pages/app_pages.dart';
-import 'pages/dashboard_page.dart';
-import 'pages/home_plus_page.dart';
 import 'pages/auth/login_page.dart';
-import 'pages/calendar_workspace_page.dart';
-import 'pages/confirmation_center_page.dart';
-import 'pages/connector_center_page.dart';
-import 'pages/conversation_detail_page.dart';
-import 'pages/conversations_page.dart';
-import 'pages/daily_knowledge_page.dart';
-import 'pages/expert_workbench_page.dart';
-import 'pages/life_recommend_page.dart';
-import 'pages/life_trip_page.dart';
-import 'pages/my_experts_page.dart';
-import 'pages/family/family_knowledge_page.dart';
-import 'pages/family/family_members_page.dart';
-import 'pages/plan_page.dart';
-import 'pages/profile/favorites_page.dart';
-import 'pages/steward_timeline_page.dart';
-import 'pages/travel_page.dart';
-import 'pages/todo_workspace_page.dart';
-import 'pages/finance_page.dart';
-import 'pages/courier_page.dart';
-import 'pages/pet_page.dart';
-import 'pages/family_schedule_page.dart';
+import 'pages/daily_control_pages.dart';
 
-GoRouter buildAppRouter({
-  required AuthController auth,
-  required ThemeMode themeMode,
-  required Color accent,
-  required void Function(ThemeMode, Color) onThemeChanged,
-}) {
+GoRouter buildAppRouter({required AuthController auth}) {
   return GoRouter(
     initialLocation: '/',
     refreshListenable: auth,
     redirect: (context, state) {
-      if (!auth.isInitialized) return null;
+      if (!auth.isInitialized) {
+        return null;
+      }
       final isAuthRoute =
           state.matchedLocation == '/login' ||
           state.matchedLocation == '/register';
-      if (!auth.isLoggedIn) return isAuthRoute ? null : '/login';
+      if (!auth.isLoggedIn) {
+        return isAuthRoute ? null : '/login';
+      }
       return isAuthRoute ? '/' : null;
     },
     routes: [
@@ -62,146 +26,32 @@ GoRouter buildAppRouter({
       GoRoute(path: '/register', builder: (_, _) => const RegisterPage()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
-            NexusMindShell(navigationShell: navigationShell),
+            HomeMindShell(navigationShell: navigationShell),
         branches: [
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: '/',
                 pageBuilder: (_, _) =>
-                    const NoTransitionPage(child: NexusHomePage()),
+                    const NoTransitionPage(child: HomeOverviewPage()),
               ),
             ],
           ),
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/ai',
-                pageBuilder: (context, _) => NoTransitionPage(
-                  child: ExpertCatalogPage(
-                    repository: context.read<ExpertRepository>(),
-                  ),
-                ),
-                routes: [
-                  GoRoute(
-                    path: 'travel',
-                    builder: (context, _) => TravelPage(
-                      travelRepository: context.read<TravelRepository>(),
-                      expertRepository: context.read<ExpertRepository>(),
-                      runRepository: context.read<ExpertRunRepository>(),
-                      automationRepository: context
-                          .read<AutomationRepository>(),
-                    ),
-                  ),
-                  GoRoute(
-                    path: 'knowledge',
-                    builder: (context, _) => DailyKnowledgePage(
-                      expertRepository: context.read<ExpertRepository>(),
-                      runRepository: context.read<ExpertRunRepository>(),
-                      knowledgeRepository: context.read<KnowledgeRepository>(),
-                      automationRepository: context
-                          .read<AutomationRepository>(),
-                    ),
-                  ),
-                  GoRoute(
-                    path: 'life-recommend',
-                    builder: (_, _) => const LifeRecommendPage(),
-                  ),
-                  GoRoute(
-                    path: 'life-trip',
-                    builder: (_, _) => const LifeTripPage(),
-                  ),
-                  GoRoute(
-                    path: 'conversations',
-                    builder: (_, _) => const ConversationsPage(),
-                  ),
-                  GoRoute(
-                    path: 'conversations/:conversationId',
-                    builder: (_, state) => ConversationDetailPage(
-                      conversationId:
-                          int.tryParse(
-                            state.pathParameters['conversationId'] ?? '',
-                          ) ??
-                          0,
-                      title: state.uri.queryParameters['title'],
-                    ),
-                  ),
-                  GoRoute(
-                    path: ':expertId',
-                    builder: (context, state) {
-                      final sourceType =
-                          state.uri.queryParameters['type'] == 'group'
-                          ? ExpertSourceType.group
-                          : ExpertSourceType.expert;
-                      return ExpertWorkspacePage(
-                        repository: context.read<ExpertRepository>(),
-                        runRepository: context.read<ExpertRunRepository>(),
-                        attachmentRepository: context
-                            .read<AttachmentRepository>(),
-                        expertId: state.pathParameters['expertId']!,
-                        sourceType: sourceType,
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/plan',
+                path: '/scenes',
                 pageBuilder: (_, _) =>
-                    const NoTransitionPage(child: PlanPage()),
-                routes: [
-                  GoRoute(
-                    path: 'todos',
-                    builder: (context, _) => TodoWorkspacePage(
-                      repository: context.read<TodoRepository>(),
-                      aiRepository: context.read<AiRepository>(),
-                    ),
-                  ),
-                  GoRoute(
-                    path: 'calendar',
-                    builder: (context, _) => CalendarWorkspacePage(
-                      repository: context.read<CalendarRepository>(),
-                      todoRepository: context.read<TodoRepository>(),
-                    ),
-                  ),
-                  GoRoute(
-                    path: 'confirmations',
-                    builder: (_, _) => const ConfirmationCenterPage(),
-                  ),
-                ],
+                    const NoTransitionPage(child: ScenesPage()),
               ),
             ],
           ),
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/home-plus',
+                path: '/devices',
                 pageBuilder: (_, _) =>
-                    const NoTransitionPage(child: HomePlusPage()),
-                routes: [
-                  GoRoute(
-                    path: 'timeline',
-                    builder: (_, _) => const StewardTimelinePage(),
-                  ),
-                  GoRoute(
-                    path: 'finance',
-                    builder: (context, _) =>
-                        FinancePage(key: const ValueKey('finance')),
-                  ),
-                  GoRoute(
-                    path: 'courier',
-                    builder: (_, _) => const CourierPage(),
-                  ),
-                  GoRoute(path: 'pets', builder: (_, _) => const PetPage()),
-                  GoRoute(
-                    path: 'schedule',
-                    builder: (_, _) => const FamilySchedulePage(),
-                  ),
-                ],
+                    const NoTransitionPage(child: DevicesPage()),
               ),
             ],
           ),
@@ -209,35 +59,7 @@ GoRouter buildAppRouter({
             routes: [
               GoRoute(
                 path: '/me',
-                pageBuilder: (_, _) => NoTransitionPage(
-                  child: ProfilePage(
-                    themeMode: themeMode,
-                    accent: accent,
-                    onThemeChanged: onThemeChanged,
-                  ),
-                ),
-                routes: [
-                  GoRoute(
-                    path: 'connectors',
-                    builder: (context, _) => const ConnectorCenterPage(),
-                  ),
-                  GoRoute(
-                    path: 'family-members',
-                    builder: (_, _) => const FamilyMembersPage(),
-                  ),
-                  GoRoute(
-                    path: 'family-knowledge',
-                    builder: (_, _) => const FamilyKnowledgePage(),
-                  ),
-                  GoRoute(
-                    path: 'favorites',
-                    builder: (_, _) => const FavoritesPage(),
-                  ),
-                  GoRoute(
-                    path: 'my-experts',
-                    builder: (_, _) => const MyExpertsPage(),
-                  ),
-                ],
+                pageBuilder: (_, _) => NoTransitionPage(child: ProfilePage()),
               ),
             ],
           ),
