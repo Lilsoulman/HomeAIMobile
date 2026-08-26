@@ -114,7 +114,7 @@ echo Git commit: %GIT_COMMIT%
 echo Log: %LOG_FILE%
 echo.
 
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$started=$false; try { Start-Transcript -LiteralPath '%LOG_FILE%' -Force | Out-Null; $started=$true; & '%FLUTTER_EXE%' build %BUILD_COMMAND% --release --flavor %FLAVOR% --target-platform=android-arm,android-arm64,android-x64 --build-name=%VERSION_NAME% --build-number=%BUILD_NUMBER% --dart-define-from-file=%CONFIG_FILE%; $code=$LASTEXITCODE } catch { Write-Host ('[FAILED] ' + $_.Exception.Message); Write-Host ($_ | Out-String); $code=1 } finally { if ($started) { Stop-Transcript | Out-Null } }; exit $code"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$started=$false; try { Start-Transcript -LiteralPath '%LOG_FILE%' -Force | Out-Null; $started=$true; & '%FLUTTER_EXE%' build %BUILD_COMMAND% --no-pub --release --flavor %FLAVOR% --target-platform=android-arm,android-arm64,android-x64 --build-name=%VERSION_NAME% --build-number=%BUILD_NUMBER% --dart-define-from-file=%CONFIG_FILE%; $code=$LASTEXITCODE } catch { Write-Host ('[FAILED] ' + $_.Exception.Message); Write-Host ($_ | Out-String); $code=1 } finally { if ($started) { Stop-Transcript | Out-Null } }; exit $code"
 set "RESULT=%ERRORLEVEL%"
 
 if not "%RESULT%"=="0" goto :failed
