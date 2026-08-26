@@ -11,19 +11,15 @@ flutter run
 
 浏览器调试：`flutter run -d chrome`。使用 VS Code 启动后，保存 Dart 文件会自动热重载；命令行启动时在终端按 `r` 热重载，按 `R` 热重启。上述能力仅适用于 Debug 模式。
 
-## Dart 代码热更新
+## Android 构建
 
-Android 测试包和生产包的 Dart 代码热更新统一使用 Shorebird。`main` 分支构建
-`staging` flavor，`release` 分支构建 `production` flavor。脚本默认完成构建并
-上传 Shorebird，只有显式传入 `-DryRun` 才不会上传。底包和 Patch 的边界、
-版本规则、命令与验证流程见
-[`docs/shorebird-code-push.md`](docs/shorebird-code-push.md)。
+项目使用标准 Flutter Engine。`main` 分支构建 `staging` 测试包，`release` 分支
+构建 `production` 生产包。
 
-Windows 下，main 工作区可直接双击 `build_staging_base.bat` 或
-`build_staging_patch.bat`；release 工作区使用对应的 `build_production_base.bat`
-或 `build_production_patch.bat`。启动器会显示 DryRun/上传菜单，执行后保持窗口
-打开，并将完整成功或失败日志保存到 `.release-logs/`。BAT 直接调用底包或 Patch
-核心脚本，不再经过额外的 PowerShell 调度层。
+Windows 下，main 工作区双击 `build_staging_android.bat`；release 工作区双击
+`build_production_android.bat`。启动器可选择 APK 或 AAB，完成后保持窗口打开，
+并将日志保存到 `.build-logs/`。版本规则、签名要求和产物位置见
+[`docs/android-build.md`](docs/android-build.md)。
 
 ## 验证
 

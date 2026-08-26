@@ -17,5 +17,4 @@ yarn-error.log*
 .env.local
 .env.*.local
 artifacts/
-.release-state/
-.release-logs/
+.build-logs/
